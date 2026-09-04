@@ -1,0 +1,10 @@
+{
+  "name": "@ai-series/audio",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit", "test": "bun test" },
+  "dependencies": { "@ai-series/db": "workspace:*", "drizzle-orm": "catalog:" },
+  "devDependencies": { "typescript": "catalog:", "@types/bun": "catalog:" }
+}

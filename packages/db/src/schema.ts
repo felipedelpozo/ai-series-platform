@@ -382,3 +382,15 @@ export const qaFindings = pgTable("qa_findings", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const audioTracks = pgTable("audio_tracks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  shotId: uuid("shot_id"),
+  kind: text("kind").notNull().default("voice"),
+  status: text("status").notNull().default("pending"),
+  text: text("text"),
+  voice: text("voice"),
+  assetId: uuid("asset_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -68,6 +68,16 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
     selectShot(selectedShot);
   }
 
+  async function generateVoice() {
+    if (!selectedShot) return;
+    const text = String(selectedShot.data.imagePrompt ?? "narrated line");
+    await fetch(`/api/shots/${selectedShot.id}/voice`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+  }
+
   return (
     <div className="flex h-full gap-4">
       <div className="w-64 shrink-0 overflow-y-auto rounded-lg border p-3">
@@ -136,6 +146,9 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
             </Button>
             <Button variant="outline" onClick={() => regenerate("video")} disabled={busy}>
               Regenerate video
+            </Button>
+            <Button variant="outline" onClick={generateVoice}>
+              Generate voice
             </Button>
           </>
         )}

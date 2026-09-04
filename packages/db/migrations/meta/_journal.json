@@ -113,6 +113,13 @@
       "when": 1788557713894,
       "tag": "0015_daffy_thundra",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1788558090901,
+      "tag": "0016_rich_prowler",
+      "breakpoints": true
     }
   ]
 }
