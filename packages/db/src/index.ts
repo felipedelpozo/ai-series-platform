@@ -35,6 +35,12 @@ export {
   tiktokVideos,
   engagementImports,
   costRecords,
+  users,
+  sessions,
+  workspaceMembers,
+  invitations,
+  workspaceQuotas,
+  workspaceSettings,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";

@@ -17,6 +17,7 @@
       "name": "@ai-series/web",
       "version": "0.0.0",
       "dependencies": {
+        "@ai-series/accounts": "workspace:*",
         "@ai-series/audience": "workspace:*",
         "@ai-series/audio": "workspace:*",
         "@ai-series/comfy": "workspace:*",
@@ -67,6 +68,18 @@
         "@ai-series/jobs": "workspace:*",
         "@ai-series/ops": "workspace:*",
         "dotenv": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/accounts": {
+      "name": "@ai-series/accounts",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/db": "workspace:*",
+        "drizzle-orm": "catalog:",
       },
       "devDependencies": {
         "@types/bun": "catalog:",
@@ -450,6 +463,8 @@
     "@ai-sdk/provider": ["@ai-sdk/provider@4.0.10", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-fX2ENAc7iDpZ+Wp4+Rk06Usn/Ys7dI9uAkGv0jlF6XVrW13NkRWx5Ou+U6lIM2E1fTLkCs16GGrUAaVvroag7A=="],
 
     "@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@5.0.36", "", { "dependencies": { "@ai-sdk/provider": "4.0.10", "@standard-schema/spec": "^1.1.0", "@workflow/serde": "4.1.0", "eventsource-parser": "^3.0.8", "undici": "^7.29.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-MFXBn6XDyf37PNQAge/HTatPJE8Vmg/g/w4WPtjSV53jq8FKAzoaN5+43hsdQa9bqgN+/13jxug9ChvsG+godQ=="],
+
+    "@ai-series/accounts": ["@ai-series/accounts@workspace:packages/accounts"],
 
     "@ai-series/ai": ["@ai-series/ai@workspace:packages/ai"],
 
