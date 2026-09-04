@@ -12,6 +12,22 @@ producto, un worker separado con estado de salud, configuración de entorno vali
 comandos coherentes de desarrollo/build/typecheck/lint/test, una página de diagnóstico solo en
 desarrollo y un tema oscuro/claro accesible preparado para un creator studio."
 
+## Clarifications
+
+### Session 2026-09-04
+
+- Q: ¿Qué paquetes se crean en esta feature y cuáles se difieren? → A: Se crean `apps/web`,
+  `apps/worker`, `packages/ui` y `packages/config`. Los paquetes de dominio, persistencia,
+  prompts, generación, proveedores, media, AI y observabilidad se difieren a sus specs
+  correspondientes.
+- Q: ¿Cómo expone el worker su estado de salud? → A: Mediante un endpoint HTTP mínimo
+  (`GET /health`) en un puerto propio que devuelve JSON con el estado global y de subsistemas,
+  sin secretos.
+- Q: ¿Cómo se restringe la página de diagnóstico a desarrollo? → A: Solo está disponible cuando
+  el runtime es desarrollo; en producción no es accesible.
+- Q: ¿Persiste el override manual de tema? → A: El tema por defecto sigue la preferencia del
+  sistema y el override manual se persiste en el navegador.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Base ejecutable del monorepo (Priority: P1)
@@ -157,10 +173,12 @@ subsistemas sin valores secretos; en un build de producción, confirmar que no e
   Generations y Settings.
 - **FR-005**: La interfaz DEBE soportar tema oscuro y claro coherente y DEBE cumplir requisitos
   de accesibilidad (focus visible, labels, contraste, estados de control).
-- **FR-006**: El worker DEBE poder arrancar como proceso separado y DEBE exponer o registrar su
-  estado de salud.
+- **FR-006**: El worker DEBE poder arrancar como proceso separado y DEBE exponer un endpoint
+  HTTP de health (`GET /health`) que devuelva en JSON el estado global y de subsistemas, sin
+  secretos.
 - **FR-007**: DEBE existir una página de diagnóstico disponible solo en desarrollo que muestre
-  qué subsistemas están configurados sin revelar secretos.
+  qué subsistemas están configurados sin revelar secretos, y NO DEBE estar accesible en
+  producción.
 - **FR-008**: La estructura DEBE permitir añadir paquetes de dominio, persistencia, generación y
   UI sin acoplarlos a la aplicación web.
 - **FR-009**: TypeScript DEBE estar activado en modo estricto en todo el monorepo.
@@ -200,4 +218,5 @@ subsistemas sin valores secretos; en un build de producción, confirmar que no e
 - Persistencia en base de datos queda fuera del alcance (se introduce en una feature posterior).
 - Integraciones con proveedores de generación quedan fuera del alcance (features posteriores).
 - El proyecto es greenfield; no se reutiliza código ni dependencias de proyectos anteriores.
-- El tema por defecto sigue la preferencia del sistema y permite override manual.
+- El tema por defecto sigue la preferencia del sistema y permite override manual, persistido en
+  el navegador.
