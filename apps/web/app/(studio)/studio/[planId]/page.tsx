@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@ai-series/ui";
+import { PlanQa } from "@/components/plan-qa";
 
 type Shot = { id: string; order: number; status: string; data: Record<string, unknown> };
 type Scene = { id: string; order: number; data: { purpose?: string }; shots: Shot[] };
@@ -138,6 +139,9 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
             </Button>
           </>
         )}
+        <div className="mt-2 border-t pt-2">
+          <PlanQa planId={planId} />
+        </div>
       </div>
     </div>
   );

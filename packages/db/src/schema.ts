@@ -365,3 +365,20 @@ export const comfyWorkflows = pgTable("comfy_workflows", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const qaFindings = pgTable("qa_findings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  planId: uuid("plan_id")
+    .notNull()
+    .references(() => episodePlans.id),
+  shotId: uuid("shot_id"),
+  check: text("check").notNull(),
+  severity: text("severity").notNull(),
+  evidence: text("evidence"),
+  target: text("target"),
+  repair: text("repair"),
+  status: text("status").notNull().default("open"),
+  resolution: text("resolution"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

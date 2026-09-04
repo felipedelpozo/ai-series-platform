@@ -29,6 +29,7 @@
         "@ai-series/planner": "workspace:*",
         "@ai-series/production": "workspace:*",
         "@ai-series/prompts": "workspace:*",
+        "@ai-series/qa": "workspace:*",
         "@ai-series/series": "workspace:*",
         "@ai-series/story": "workspace:*",
         "@ai-series/ui": "workspace:*",
@@ -240,6 +241,23 @@
         "typescript": "catalog:",
       },
     },
+    "packages/qa": {
+      "name": "@ai-series/qa",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/ai": "workspace:*",
+        "@ai-series/db": "workspace:*",
+        "@ai-series/prompts": "workspace:*",
+        "@ai-series/series": "workspace:*",
+        "@ai-series/story": "workspace:*",
+        "drizzle-orm": "catalog:",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/series": {
       "name": "@ai-series/series",
       "version": "0.0.0",
@@ -359,6 +377,8 @@
     "@ai-series/production": ["@ai-series/production@workspace:packages/production"],
 
     "@ai-series/prompts": ["@ai-series/prompts@workspace:packages/prompts"],
+
+    "@ai-series/qa": ["@ai-series/qa@workspace:packages/qa"],
 
     "@ai-series/series": ["@ai-series/series@workspace:packages/series"],
 

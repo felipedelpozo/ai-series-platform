@@ -22,6 +22,7 @@ export {
   generationSteps,
   directorSessions,
   comfyWorkflows,
+  qaFindings,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";

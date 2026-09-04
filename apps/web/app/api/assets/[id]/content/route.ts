@@ -12,7 +12,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
   const dir = process.env.ASSET_STORE_DIR ?? ".media";
   try {
-    const data = await fs.readFile(join(dir, id));
+    const data = await fs.readFile(join(/* turbopackIgnore: true */ dir, id));
     return new NextResponse(new Uint8Array(data), {
       headers: {
         "Content-Type": asset.mime ?? "application/octet-stream",
