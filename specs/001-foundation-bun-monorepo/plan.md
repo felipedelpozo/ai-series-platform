@@ -89,6 +89,8 @@ apps/
 │   │   │   ├── generations/page.tsx
 │   │   │   └── settings/page.tsx
 │   │   └── diagnostics/page.tsx  # dev-only
+│   ├── lib/config.ts          # server config accessor
+│   ├── instrumentation.ts     # boot env validation
 │   ├── next.config.ts
 │   ├── postcss.config.mjs
 │   ├── tsconfig.json
@@ -117,6 +119,7 @@ packages/
 
 tsconfig.base.json           # shared strict TypeScript config
 package.json                 # root workspaces + catalogs + scripts
+scripts/dev.sh               # concurrent web + worker dev runner
 bun.lock
 ```
 
