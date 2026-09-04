@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ai-series/config": "workspace:*",
+    "@ai-series/accounts": "workspace:*",
     "@ai-series/db": "workspace:*",
     "@ai-series/decision": "workspace:*",
     "@ai-series/entities": "workspace:*",

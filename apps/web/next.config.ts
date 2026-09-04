@@ -7,6 +7,7 @@ config({ path: join(process.cwd(), "..", "..", ".env") });
 const nextConfig: NextConfig = {
   transpilePackages: [
     "@ai-series/config",
+    "@ai-series/accounts",
     "@ai-series/ui",
     "@ai-series/db",
     "@ai-series/decision",
