@@ -19,6 +19,7 @@ export {
   episodePlans,
   scenes,
   shots,
+  generationSteps,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";

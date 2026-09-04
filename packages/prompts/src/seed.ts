@@ -99,6 +99,18 @@ const SEEDS = [
       { name: "shot_index", required: true },
     ],
   },
+  {
+    purpose: "image.generate",
+    name: "Image Generate",
+    template: "{{prompt}}",
+    variables: [{ name: "prompt", required: true }],
+  },
+  {
+    purpose: "video.generate",
+    name: "Video Generate",
+    template: "{{prompt}}",
+    variables: [{ name: "prompt", required: true }],
+  },
 ];
 
 export async function seedPrompts(db: Db): Promise<void> {

@@ -20,6 +20,7 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scenes, setScenes] = useState<Record<string, Scene[]>>({});
+  const [progress, setProgress] = useState<Record<string, { status: string; shotsWithKeyframe: number; shotsWithVideo: number; totalShots: number }>>({});
 
   function load() {
     fetch(`/api/series/${seriesId}/plans`)
@@ -65,6 +66,16 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
     setScenes((prev) => ({ ...prev, [planId]: list.scenes }));
   }
 
+  async function generateShots(planId: string, kind: string) {
+    await fetch(`/api/plans/${planId}/generate-shots`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind }),
+    });
+    const p = await (await fetch(`/api/plans/${planId}/progress`)).json();
+    setProgress((prev) => ({ ...prev, [planId]: p }));
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -94,6 +105,12 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
             <button onClick={() => generateScenes(p.id)} className="underline">
               scenes
             </button>
+            <button onClick={() => generateShots(p.id, "keyframe")} className="underline">
+              keyframes
+            </button>
+            <button onClick={() => generateShots(p.id, "video")} className="underline">
+              videos
+            </button>
           </li>
         ))}
       </ul>
@@ -105,6 +122,11 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
             </li>
           ))}
         </ul>
+      ))}
+      {Object.entries(progress).map(([planId, p]) => (
+        <p key={planId} className="mt-1 pl-4 text-xs text-muted-foreground">
+          progress: {p.shotsWithKeyframe}/{p.totalShots} keyframes · {p.shotsWithVideo}/{p.totalShots} videos · {p.status}
+        </p>
       ))}
     </div>
   );
