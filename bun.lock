@@ -19,6 +19,7 @@
       "dependencies": {
         "@ai-series/config": "workspace:*",
         "@ai-series/db": "workspace:*",
+        "@ai-series/director": "workspace:*",
         "@ai-series/entities": "workspace:*",
         "@ai-series/fal": "workspace:*",
         "@ai-series/generation": "workspace:*",
@@ -98,6 +99,19 @@
         "@types/bun": "catalog:",
         "dotenv": "catalog:",
         "drizzle-kit": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/director": {
+      "name": "@ai-series/director",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/db": "workspace:*",
+        "@fal-ai/client": "catalog:",
+        "drizzle-orm": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -312,6 +326,8 @@
     "@ai-series/config": ["@ai-series/config@workspace:packages/config"],
 
     "@ai-series/db": ["@ai-series/db@workspace:packages/db"],
+
+    "@ai-series/director": ["@ai-series/director@workspace:packages/director"],
 
     "@ai-series/entities": ["@ai-series/entities@workspace:packages/entities"],
 

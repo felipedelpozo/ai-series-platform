@@ -20,6 +20,7 @@ export {
   scenes,
   shots,
   generationSteps,
+  directorSessions,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";
