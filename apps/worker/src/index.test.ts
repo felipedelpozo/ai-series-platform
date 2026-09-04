@@ -13,7 +13,17 @@ describe("worker health", () => {
     expect(body.service).toBe("ai-series-worker");
     expect(body.timestamp).toBe("2026-09-04T00:00:00.000Z");
     expect(Array.isArray(body.subsystems)).toBe(true);
+    expect(body.database).toBeNull();
     expect(JSON.stringify(body)).not.toContain("supersecret");
+  });
+
+  it("includes database health when provided", async () => {
+    const env = loadEnv({});
+    const response = healthResponse(env.subsystems, new Date("2026-09-04T00:00:00.000Z"), {
+      ok: true,
+    });
+    const body = (await response.json()) as { database: { ok: boolean } };
+    expect(body.database).toEqual({ ok: true });
   });
 
   it("serves /health over HTTP", async () => {

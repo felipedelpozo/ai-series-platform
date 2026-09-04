@@ -62,6 +62,21 @@ printing secret values.
 
 See `.env.example` for a template. Secrets are server-side only.
 
+## Database
+
+PostgreSQL is the source of truth (Drizzle ORM). Generate and apply versioned migrations with:
+
+```bash
+bun run db:generate
+bun run db:migrate
+```
+
+Integration tests run against a dedicated `ai_series_test` database:
+
+```bash
+bun run test
+```
+
 ## Diagnostics
 
 In development, `/diagnostics` shows which subsystems are configured without revealing

@@ -1,13 +1,16 @@
 import { loadEnv, type AppEnvConfig, type SubsystemStatus } from "@ai-series/config";
+import { checkDb, type DbHealth } from "@ai-series/db";
 
 export function healthResponse(
   subsystems: SubsystemStatus[],
   now: Date = new Date(),
+  database?: DbHealth,
 ): Response {
   return Response.json({
     status: "ok",
     service: "ai-series-worker",
     subsystems,
+    database: database ?? null,
     timestamp: now.toISOString(),
   });
 }
@@ -15,10 +18,11 @@ export function healthResponse(
 export function startServer(port: number, subsystems: SubsystemStatus[]) {
   return Bun.serve({
     port,
-    fetch(request) {
+    async fetch(request) {
       const url = new URL(request.url);
       if (url.pathname === "/health") {
-        return healthResponse(subsystems);
+        const database = await checkDb();
+        return healthResponse(subsystems, undefined, database);
       }
       return new Response("Not found", { status: 404 });
     },
