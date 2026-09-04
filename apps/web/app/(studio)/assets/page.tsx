@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@ai-series/ui";
 
 type Asset = {
@@ -33,18 +33,18 @@ export default function AssetsPage() {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  function refresh() {
     const params = new URLSearchParams();
     if (kind) params.set("kind", kind);
     if (status) params.set("status", status);
-    const res = await fetch(`/api/assets?${params.toString()}`);
-    const data = await res.json();
-    setAssets(data.assets as Asset[]);
-  }, [kind, status]);
+    return fetch(`/api/assets?${params.toString()}`)
+      .then((r) => r.json())
+      .then((d) => setAssets(d.assets as Asset[]));
+  }
 
   useEffect(() => {
-    load();
-  }, [load]);
+    void refresh();
+  }, [kind, status]);
 
   async function open(id: string) {
     const res = await fetch(`/api/assets/${id}`);
@@ -65,7 +65,7 @@ export default function AssetsPage() {
     }
     setError(null);
     setDetail(null);
-    load();
+    void refresh();
   }
 
   async function remove() {
@@ -78,7 +78,7 @@ export default function AssetsPage() {
     }
     setError(null);
     setDetail(null);
-    load();
+    void refresh();
   }
 
   return (

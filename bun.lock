@@ -21,6 +21,7 @@
         "@ai-series/db": "workspace:*",
         "@ai-series/fal": "workspace:*",
         "@ai-series/generation": "workspace:*",
+        "@ai-series/jobs": "workspace:*",
         "@ai-series/media": "workspace:*",
         "@ai-series/prompts": "workspace:*",
         "@ai-series/ui": "workspace:*",
@@ -47,6 +48,8 @@
       "dependencies": {
         "@ai-series/config": "workspace:*",
         "@ai-series/db": "workspace:*",
+        "@ai-series/generation": "workspace:*",
+        "@ai-series/jobs": "workspace:*",
         "dotenv": "catalog:",
       },
       "devDependencies": {
@@ -104,6 +107,18 @@
       "devDependencies": {
         "@types/bun": "catalog:",
         "postgres": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/jobs": {
+      "name": "@ai-series/jobs",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/db": "workspace:*",
+        "drizzle-orm": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -196,6 +211,8 @@
     "@ai-series/fal": ["@ai-series/fal@workspace:packages/fal"],
 
     "@ai-series/generation": ["@ai-series/generation@workspace:packages/generation"],
+
+    "@ai-series/jobs": ["@ai-series/jobs@workspace:packages/jobs"],
 
     "@ai-series/media": ["@ai-series/media@workspace:packages/media"],
 

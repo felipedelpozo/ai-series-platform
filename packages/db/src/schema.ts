@@ -118,3 +118,47 @@ export const assets = pgTable("assets", {
   status: text("status").notNull().default("draft"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const jobs = pgTable("jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  idempotencyKey: text("idempotency_key").notNull().unique(),
+  kind: text("kind").notNull(),
+  status: text("status").notNull().default("queued"),
+  input: jsonb("input").$type<Record<string, unknown>>(),
+  output: jsonb("output").$type<Record<string, unknown>>(),
+  generationId: uuid("generation_id"),
+  providerRequestId: text("provider_request_id"),
+  model: text("model"),
+  maxAttempts: integer("max_attempts").notNull().default(3),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const jobAttempts = pgTable("job_attempts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  jobId: uuid("job_id")
+    .notNull()
+    .references(() => jobs.id),
+  attemptNumber: integer("attempt_number").notNull(),
+  status: text("status").notNull().default("running"),
+  providerRequestId: text("provider_request_id"),
+  error: text("error"),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  durationMs: integer("duration_ms"),
+});
+
+export const jobEvents = pgTable("job_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  jobId: uuid("job_id")
+    .notNull()
+    .references(() => jobs.id),
+  type: text("type").notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
