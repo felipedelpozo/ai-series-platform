@@ -1,5 +1,9 @@
+import { config } from "dotenv";
+import { join } from "node:path";
 import { loadEnv, type AppEnvConfig, type SubsystemStatus } from "@ai-series/config";
 import { checkDb, type DbHealth } from "@ai-series/db";
+
+config({ path: join(process.cwd(), "..", "..", ".env") });
 
 export function healthResponse(
   subsystems: SubsystemStatus[],

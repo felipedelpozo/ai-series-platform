@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "drizzle-kit": "catalog:",
+    "dotenv": "catalog:",
     "typescript": "catalog:",
     "@types/bun": "catalog:"
   }
