@@ -16,6 +16,7 @@
     "@ai-series/entities": "workspace:*",
     "@ai-series/series": "workspace:*",
     "@ai-series/story": "workspace:*",
+    "@ai-series/tiktok": "workspace:*",
     "@ai-series/planner": "workspace:*",
     "@ai-series/production": "workspace:*",
     "@ai-series/director": "workspace:*",

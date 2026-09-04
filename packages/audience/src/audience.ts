@@ -16,6 +16,7 @@ export function detectSpam(input: {
   comment?: string;
   reaction?: string;
   metadata?: Record<string, unknown>;
+  liked?: boolean;
 }): boolean {
   const optionLabel = input.metadata?.optionLabel;
   const optionId = input.metadata?.optionId;
@@ -24,9 +25,10 @@ export function detectSpam(input: {
     (typeof optionId === "string" && optionId.trim().length > 0);
   if (hasExplicitOption) return false;
   const text = `${input.comment ?? ""} ${input.reaction ?? ""}`.trim();
-  if (!text) return true;
   if (/https?:\/\//.test(text)) return true;
   if (text.length > 500) return true;
+  if (input.liked) return false;
+  if (!text) return true;
   return false;
 }
 

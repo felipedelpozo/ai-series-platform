@@ -2,19 +2,19 @@
 
 ## Phase 1: Schema
 
-- [ ] T001 Add `tiktok_accounts`, `tiktok_videos` and `engagement_imports` tables and generate a
+- [x] T001 Add `tiktok_accounts`, `tiktok_videos` and `engagement_imports` tables and generate a
       migration
 
 ## Phase 2: Domain
 
-- [ ] T002 Add `packages/tiktok` with capability status, account/video/engagement primitives and
+- [x] T002 Add `packages/tiktok` with capability status, account/video/engagement primitives and
       retry/rate-limit utilities
-- [ ] T003 Add deterministic tests for capability gating and retry/backoff
+- [x] T003 Add deterministic tests for capability gating and retry/backoff
 
 ## Phase 3: API + UI
 
-- [ ] T004 Implement TikTok API routes and a compact integration status view
+- [x] T004 Implement TikTok API routes and a compact integration status view
 
 ## Phase 4: Validation
 
-- [ ] T005 Verify `typecheck`, `lint`, `test`, `build`
+- [x] T005 Verify `typecheck`, `lint`, `test`, `build`
