@@ -8,6 +8,7 @@
   "dependencies": {
     "@ai-series/ai": "workspace:*",
     "@ai-series/db": "workspace:*",
+    "@ai-series/jobs": "workspace:*",
     "@ai-series/prompts": "workspace:*",
     "drizzle-orm": "catalog:",
     "zod": "catalog:"

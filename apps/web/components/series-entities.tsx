@@ -5,6 +5,7 @@ import { Button } from "@ai-series/ui";
 
 type Entity = { id: string; type: string; name: string };
 type Version = { id: string; version: number; isActive: boolean; source: string; name: string };
+type Sheet = { id: string; status: string; asset: { url: string } | null };
 
 export function SeriesEntities({ seriesId }: { seriesId: string }) {
   const [type, setType] = useState("character");
@@ -12,6 +13,7 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
   const [name, setName] = useState("");
   const [dataJson, setDataJson] = useState("{}");
   const [versions, setVersions] = useState<Record<string, Version[]>>({});
+  const [sheets, setSheets] = useState<Record<string, Sheet[]>>({});
   const [error, setError] = useState<string | null>(null);
 
   function load() {
@@ -51,6 +53,9 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
     const res = await fetch(`/api/entities/${entityId}`);
     const data = await res.json();
     setVersions((prev) => ({ ...prev, [entityId]: data.versions }));
+    const sheetRes = await fetch(`/api/entities/${entityId}/sheets`);
+    const sheetData = await sheetRes.json();
+    setSheets((prev) => ({ ...prev, [entityId]: sheetData.sheets }));
   }
 
   async function generate(entityId: string) {
@@ -67,6 +72,35 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
   async function activate(versionId: string) {
     await fetch(`/api/entities/versions/${versionId}/activate`, { method: "POST" });
     load();
+  }
+
+  async function generateSheet(entityId: string) {
+    const res = await fetch(`/api/entities/${entityId}/sheets`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "Sheet generation failed");
+      return;
+    }
+    setError(null);
+    open(entityId);
+  }
+
+  async function sheetStatus(sheetId: string, status: string, entityId: string) {
+    await fetch(`/api/sheets/${sheetId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    open(entityId);
+  }
+
+  async function promote(sheetId: string, entityId: string) {
+    await fetch(`/api/sheets/${sheetId}/promote`, { method: "POST" });
+    open(entityId);
   }
 
   return (
@@ -112,6 +146,9 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
               <Button size="sm" variant="outline" onClick={() => generate(entity.id)}>
                 Generate (AI)
               </Button>
+              <Button size="sm" variant="outline" onClick={() => generateSheet(entity.id)}>
+                Generate sheet
+              </Button>
             </div>
             {(versions[entity.id] ?? []).map((v) => (
               <div key={v.id} className="ml-2 flex items-center justify-between text-xs text-muted-foreground">
@@ -123,6 +160,23 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
                     activate
                   </button>
                 )}
+              </div>
+            ))}
+            {(sheets[entity.id] ?? []).map((sheet) => (
+              <div key={sheet.id} className="ml-2 mt-1 flex items-center gap-2 text-xs">
+                {sheet.asset && (
+                  <img src={sheet.asset.url} alt="sheet" className="h-10 w-10 rounded object-cover" />
+                )}
+                <span className="text-muted-foreground">{sheet.status}</span>
+                <button onClick={() => sheetStatus(sheet.id, "approved", entity.id)} className="underline">
+                  approve
+                </button>
+                <button onClick={() => sheetStatus(sheet.id, "rejected", entity.id)} className="underline">
+                  reject
+                </button>
+                <button onClick={() => promote(sheet.id, entity.id)} className="underline">
+                  promote
+                </button>
               </div>
             ))}
           </li>

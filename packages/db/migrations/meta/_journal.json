@@ -57,6 +57,13 @@
       "when": 1788555071208,
       "tag": "0007_old_spiral",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788555452819,
+      "tag": "0008_perfect_amphibian",
+      "breakpoints": true
     }
   ]
 }
