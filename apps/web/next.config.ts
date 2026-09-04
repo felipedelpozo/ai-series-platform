@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     "@ai-series/db",
     "@ai-series/entities",
     "@ai-series/series",
+    "@ai-series/story",
     "@ai-series/ai",
     "@ai-series/prompts",
     "@ai-series/fal",

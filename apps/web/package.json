@@ -14,6 +14,7 @@
     "@ai-series/db": "workspace:*",
     "@ai-series/entities": "workspace:*",
     "@ai-series/series": "workspace:*",
+    "@ai-series/story": "workspace:*",
     "@ai-series/fal": "workspace:*",
     "@ai-series/generation": "workspace:*",
     "@ai-series/jobs": "workspace:*",

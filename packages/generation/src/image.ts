@@ -84,7 +84,7 @@ export async function ingestAsset(
   const dir = assetStoreDir();
   await fs.mkdir(dir, { recursive: true });
   const assetId = randomUUID();
-  await fs.writeFile(join(dir, assetId), buffer);
+  await fs.writeFile(join(/* turbopackIgnore: true */ dir, assetId), buffer);
 
   await db.insert(assets).values({
     id: assetId,

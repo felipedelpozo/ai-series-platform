@@ -64,6 +64,13 @@
       "when": 1788555452819,
       "tag": "0008_perfect_amphibian",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788555682341,
+      "tag": "0009_loving_manta",
+      "breakpoints": true
     }
   ]
 }
