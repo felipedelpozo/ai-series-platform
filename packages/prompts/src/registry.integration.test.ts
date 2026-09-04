@@ -8,6 +8,9 @@ import {
   auditLog,
   ensureDefaultWorkspace,
   generations,
+  jobAttempts,
+  jobEvents,
+  jobs,
   promptSnapshots,
   promptTemplates,
   promptVersions,
@@ -65,6 +68,9 @@ describe.skipIf(!hasDb)("prompt registry integration", () => {
         promptSnapshots,
         generations,
         assets,
+        jobs,
+        jobAttempts,
+        jobEvents,
       },
     });
     await migrate(db, { migrationsFolder });
