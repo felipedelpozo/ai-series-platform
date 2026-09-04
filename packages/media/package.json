@@ -1,0 +1,22 @@
+{
+  "name": "@ai-series/media",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@ai-series/db": "workspace:*",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "postgres": "catalog:",
+    "typescript": "catalog:",
+    "@types/bun": "catalog:"
+  }
+}
