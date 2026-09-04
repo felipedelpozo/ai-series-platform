@@ -8,7 +8,7 @@ import { insertAuditLog } from "./audit";
 import { checkDb, DatabaseConfigError, ensureDefaultWorkspace, getDb, type Db } from "./client";
 import * as schema from "./schema";
 
-const TEST_DB = "ai_series_test";
+const TEST_DB = "ai_series_platform_test";
 const migrationsFolder = join(import.meta.dirname, "..", "migrations");
 
 function baseUrl(): string {

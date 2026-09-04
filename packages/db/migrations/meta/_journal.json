@@ -15,6 +15,13 @@
       "when": 1788551638522,
       "tag": "0001_moaning_vivisector",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788552549036,
+      "tag": "0002_natural_human_torch",
+      "breakpoints": true
     }
   ]
 }

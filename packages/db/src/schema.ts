@@ -75,3 +75,42 @@ export const promptSnapshots = pgTable("prompt_snapshots", {
   params: jsonb("params").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const generations = pgTable("generations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  purpose: text("purpose").notNull(),
+  templateId: uuid("template_id"),
+  versionId: uuid("version_id"),
+  promptSnapshotId: uuid("prompt_snapshot_id"),
+  provider: text("provider").notNull().default("fal"),
+  model: text("model").notNull(),
+  status: text("status").notNull().default("queued"),
+  requestId: text("request_id"),
+  params: jsonb("params").$type<Record<string, unknown>>(),
+  error: text("error"),
+  durationMs: integer("duration_ms"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const assets = pgTable("assets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  generationId: uuid("generation_id"),
+  kind: text("kind").notNull().default("image"),
+  source: text("source").notNull().default("generated"),
+  url: text("url"),
+  mime: text("mime"),
+  width: integer("width"),
+  height: integer("height"),
+  sizeBytes: integer("size_bytes"),
+  provider: text("provider"),
+  model: text("model"),
+  status: text("status").notNull().default("draft"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
