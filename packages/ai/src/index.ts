@@ -35,6 +35,9 @@ export async function generateStructured<T extends z.ZodTypeAny>(input: {
     return result.object as z.infer<T>;
   } catch (error) {
     if (error instanceof AiError) throw error;
-    throw new AiError("Structured generation failed", error);
+    throw new AiError(
+      `Structured generation failed: ${error instanceof Error ? error.message : String(error)}`,
+      error,
+    );
   }
 }
