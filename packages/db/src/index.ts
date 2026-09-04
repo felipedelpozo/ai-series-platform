@@ -6,6 +6,9 @@ export {
   promptSnapshots,
   generations,
   assets,
+  jobs,
+  jobAttempts,
+  jobEvents,
 } from "./schema";
 export type { PromptVariable } from "./schema";
 export {

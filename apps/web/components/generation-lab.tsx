@@ -107,15 +107,15 @@ export function GenerationLab() {
       return;
     }
     setGeneration({
-      id: data.id,
+      id: data.jobId,
       status: "queued",
-      requestId: data.requestId,
+      requestId: null,
       error: null,
       model: "",
       kind: mode,
     });
     setBusy(false);
-    poll(data.id);
+    poll(data.jobId);
   }
 
   function poll(id: string) {
@@ -123,13 +123,28 @@ export function GenerationLab() {
     timerRef.current = setInterval(async () => {
       const res = await fetch(`/api/generations/${id}`);
       const data = await res.json();
-      const gen = data.generation as Generation;
+      const job = data.job as {
+        id: string;
+        status: string;
+        error: string | null;
+        kind: string;
+        model: string | null;
+        providerRequestId: string | null;
+      };
+      const gen: Generation = {
+        id: job.id,
+        status: job.status,
+        requestId: job.providerRequestId,
+        error: job.error,
+        model: job.model ?? "",
+        kind: job.kind,
+      };
       setGeneration(gen);
-      if (gen.status === "succeeded") {
+      if (job.status === "succeeded") {
         setAsset(data.asset as Asset);
         if (timerRef.current) clearInterval(timerRef.current);
-      } else if (gen.status === "failed") {
-        setError(gen.error ?? "Generation failed");
+      } else if (job.status === "failed") {
+        setError(job.error ?? "Generation failed");
         if (timerRef.current) clearInterval(timerRef.current);
       }
     }, 3000);

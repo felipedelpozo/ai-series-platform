@@ -36,6 +36,13 @@
       "when": 1788553808883,
       "tag": "0004_high_korath",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788554264704,
+      "tag": "0005_flashy_punisher",
+      "breakpoints": true
     }
   ]
 }

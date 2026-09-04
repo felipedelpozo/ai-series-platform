@@ -44,7 +44,7 @@
     "build": "bun run build:web && bun run build:worker",
     "build:web": "bun run --cwd apps/web build",
     "build:worker": "bun run --cwd apps/worker build",
-    "typecheck": "bun run --cwd packages/config typecheck && bun run --cwd packages/db typecheck && bun run --cwd packages/fal typecheck && bun run --cwd packages/media typecheck && bun run --cwd packages/prompts typecheck && bun run --cwd packages/generation typecheck && bun run --cwd packages/ui typecheck && bun run --cwd apps/web typecheck && bun run --cwd apps/worker typecheck",
+    "typecheck": "bun run --cwd packages/config typecheck && bun run --cwd packages/db typecheck && bun run --cwd packages/fal typecheck && bun run --cwd packages/jobs typecheck && bun run --cwd packages/media typecheck && bun run --cwd packages/prompts typecheck && bun run --cwd packages/generation typecheck && bun run --cwd packages/ui typecheck && bun run --cwd apps/web typecheck && bun run --cwd apps/worker typecheck",
     "lint": "eslint .",
     "test": "bun test",
     "db:generate": "bun run --cwd packages/db db:generate",
