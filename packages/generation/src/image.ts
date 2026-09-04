@@ -22,7 +22,7 @@ export type StartImageInput = {
   model?: string;
 };
 
-async function resolveWorkspaceId(db: Db): Promise<string> {
+export async function resolveWorkspaceId(db: Db): Promise<string> {
   const [row] = await db
     .select({ id: workspace.id })
     .from(workspace)
@@ -33,38 +33,42 @@ async function resolveWorkspaceId(db: Db): Promise<string> {
   return row.id;
 }
 
-async function resolveActiveVersion(db: Db, input: StartImageInput) {
-  if (input.versionId) {
+export async function resolveActiveVersion(
+  db: Db,
+  opts: { templateId?: string; versionId?: string },
+) {
+  if (opts.versionId) {
     const [version] = await db
       .select()
       .from(promptVersions)
-      .where(eq(promptVersions.id, input.versionId));
+      .where(eq(promptVersions.id, opts.versionId));
     return version;
   }
-  if (input.templateId) {
+  if (opts.templateId) {
     const versions = await db
       .select()
       .from(promptVersions)
       .where(
-        and(eq(promptVersions.templateId, input.templateId), eq(promptVersions.isActive, true)),
+        and(eq(promptVersions.templateId, opts.templateId), eq(promptVersions.isActive, true)),
       );
     return versions[0];
   }
   return undefined;
 }
 
-function assetStoreDir(): string {
+export function assetStoreDir(): string {
   return process.env.ASSET_STORE_DIR ?? ".media";
 }
 
-async function ingestImage(
+export async function ingestAsset(
   db: Db,
   input: {
     workspaceId: string;
     generationId: string;
     provider: string;
     model: string;
-    image: {
+    kind: "image" | "video";
+    file: {
       url: string;
       width?: number | null;
       height?: number | null;
@@ -72,9 +76,9 @@ async function ingestImage(
     };
   },
 ): Promise<string> {
-  const response = await fetch(input.image.url);
+  const response = await fetch(input.file.url);
   if (!response.ok) {
-    throw new Error(`Failed to download generated image: HTTP ${response.status}`);
+    throw new Error(`Failed to download generated asset: HTTP ${response.status}`);
   }
   const buffer = Buffer.from(await response.arrayBuffer());
   const dir = assetStoreDir();
@@ -86,12 +90,12 @@ async function ingestImage(
     id: assetId,
     workspaceId: input.workspaceId,
     generationId: input.generationId,
-    kind: "image",
+    kind: input.kind,
     source: "generated",
     url: `/api/assets/${assetId}/content`,
-    mime: input.image.content_type ?? "image/png",
-    width: input.image.width ?? null,
-    height: input.image.height ?? null,
+    mime: input.file.content_type ?? (input.kind === "video" ? "video/mp4" : "image/png"),
+    width: input.file.width ?? null,
+    height: input.file.height ?? null,
     sizeBytes: buffer.length,
     provider: input.provider,
     model: input.model,
@@ -123,6 +127,11 @@ export async function startImageGeneration(
 
   const model = input.model ?? DEFAULT_IMAGE_MODEL;
   const params = input.params ?? {};
+  const imageInput = {
+    prompt: rendered,
+    image_size: typeof params.image_size === "string" ? params.image_size : undefined,
+    seed: typeof params.seed === "number" ? params.seed : undefined,
+  };
 
   const [snapshot] = await db
     .insert(promptSnapshots)
@@ -136,7 +145,7 @@ export async function startImageGeneration(
     })
     .returning({ id: promptSnapshots.id });
 
-  const { requestId } = await submitImage(model, { prompt: rendered, ...params });
+  const { requestId } = await submitImage(model, imageInput);
 
   const [generation] = await db
     .insert(generations)
@@ -148,6 +157,7 @@ export async function startImageGeneration(
       promptSnapshotId: snapshot.id,
       provider: "fal",
       model,
+      kind: "image",
       status: "queued",
       requestId,
       params,
@@ -181,12 +191,18 @@ export async function pollImageGeneration(db: Db, id: string) {
     } else {
       const result = await imageResult(generation.model, generation.requestId!);
       const image = result.images[0];
-      await ingestImage(db, {
+      await ingestAsset(db, {
         workspaceId: generation.workspaceId,
         generationId: id,
         provider: generation.provider,
         model: generation.model,
-        image: { url: image.url, width: image.width, height: image.height, content_type: image.content_type },
+        kind: "image",
+        file: {
+          url: image.url,
+          width: image.width,
+          height: image.height,
+          content_type: image.content_type,
+        },
       });
       await db
         .update(generations)
