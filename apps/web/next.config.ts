@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
     "@ai-series/jobs",
     "@ai-series/loop",
     "@ai-series/media",
+    "@ai-series/ops",
   ],
 };
 

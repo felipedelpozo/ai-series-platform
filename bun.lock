@@ -31,6 +31,7 @@
         "@ai-series/jobs": "workspace:*",
         "@ai-series/loop": "workspace:*",
         "@ai-series/media": "workspace:*",
+        "@ai-series/ops": "workspace:*",
         "@ai-series/planner": "workspace:*",
         "@ai-series/production": "workspace:*",
         "@ai-series/prompts": "workspace:*",
@@ -64,6 +65,7 @@
         "@ai-series/db": "workspace:*",
         "@ai-series/generation": "workspace:*",
         "@ai-series/jobs": "workspace:*",
+        "@ai-series/ops": "workspace:*",
         "dotenv": "catalog:",
       },
       "devDependencies": {
@@ -269,6 +271,18 @@
         "typescript": "catalog:",
       },
     },
+    "packages/ops": {
+      "name": "@ai-series/ops",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/db": "workspace:*",
+        "drizzle-orm": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/planner": {
       "name": "@ai-series/planner",
       "version": "0.0.0",
@@ -466,6 +480,8 @@
     "@ai-series/loop": ["@ai-series/loop@workspace:packages/loop"],
 
     "@ai-series/media": ["@ai-series/media@workspace:packages/media"],
+
+    "@ai-series/ops": ["@ai-series/ops@workspace:packages/ops"],
 
     "@ai-series/planner": ["@ai-series/planner@workspace:packages/planner"],
 

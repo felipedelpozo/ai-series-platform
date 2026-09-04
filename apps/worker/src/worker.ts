@@ -8,6 +8,12 @@ import {
   type StartImageInput,
   type StartVideoInput,
 } from "@ai-series/generation";
+import {
+  estimateCost,
+  recordCostActual,
+  recordCostEstimate,
+  resolveJobContext,
+} from "@ai-series/ops";
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : "unknown worker error";
@@ -19,6 +25,28 @@ export async function processOneJob(db: Db): Promise<boolean> {
     return false;
   }
   const { job, attempt } = claimed;
+  const startedAt = Date.now();
+  const kind = job.kind === "video" ? "video" : "image";
+  const model = job.model ?? "unknown";
+  const correlationId = job.idempotencyKey;
+  const context = await resolveJobContext(db, job.id);
+
+  await recordCostEstimate(db, {
+    workspaceId: job.workspaceId,
+    jobId: job.id,
+    seriesId: context.seriesId ?? undefined,
+    episodeNumber: context.episodeNumber ?? undefined,
+    sceneId: context.sceneId ?? undefined,
+    shotId: context.shotId ?? undefined,
+    provider: "fal",
+    model,
+    kind,
+    estimatedCost: estimateCost(kind, model),
+    correlationId,
+  });
+
+  let status: "success" | "error" = "success";
+  let errorText: string | undefined;
 
   try {
     if (job.kind === "image") {
@@ -36,7 +64,9 @@ export async function processOneJob(db: Db): Promise<boolean> {
       if (generation.status === "succeeded") {
         await completeJob(db, job.id, { generationId }, attempt.id);
       } else {
-        await failJob(db, job.id, generation.error ?? "image generation failed", {
+        status = "error";
+        errorText = generation.error ?? "image generation failed";
+        await failJob(db, job.id, errorText, {
           retryable: true,
           attemptId: attempt.id,
         });
@@ -56,15 +86,36 @@ export async function processOneJob(db: Db): Promise<boolean> {
       if (generation.status === "succeeded") {
         await completeJob(db, job.id, { generationId }, attempt.id);
       } else {
-        await failJob(db, job.id, generation.error ?? "video generation failed", {
+        status = "error";
+        errorText = generation.error ?? "video generation failed";
+        await failJob(db, job.id, errorText, {
           retryable: true,
           attemptId: attempt.id,
         });
       }
     }
   } catch (error) {
-    await failJob(db, job.id, message(error), { retryable: true, attemptId: attempt.id });
+    status = "error";
+    errorText = message(error);
+    await failJob(db, job.id, errorText, { retryable: true, attemptId: attempt.id });
   }
+
+  await recordCostActual(db, {
+    workspaceId: job.workspaceId,
+    jobId: job.id,
+    seriesId: context.seriesId ?? undefined,
+    episodeNumber: context.episodeNumber ?? undefined,
+    sceneId: context.sceneId ?? undefined,
+    shotId: context.shotId ?? undefined,
+    provider: "fal",
+    model,
+    kind,
+    status,
+    durationMs: Date.now() - startedAt,
+    actualCost: estimateCost(kind, model),
+    correlationId,
+    error: errorText,
+  });
 
   return true;
 }

@@ -551,3 +551,27 @@ export const engagementImports = pgTable("engagement_imports", {
   correlationId: text("correlation_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const costRecords = pgTable("cost_records", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  jobId: uuid("job_id"),
+  generationId: uuid("generation_id"),
+  seriesId: uuid("series_id"),
+  episodeNumber: integer("episode_number"),
+  sceneId: uuid("scene_id"),
+  shotId: uuid("shot_id"),
+  provider: text("provider").notNull(),
+  model: text("model"),
+  kind: text("kind").notNull(),
+  status: text("status").notNull().default("success"),
+  phase: text("phase").notNull().default("actual"),
+  estimatedCost: real("estimated_cost"),
+  actualCost: real("actual_cost"),
+  durationMs: integer("duration_ms"),
+  correlationId: text("correlation_id"),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

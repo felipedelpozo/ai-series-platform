@@ -30,6 +30,7 @@
     "@ai-series/jobs": "workspace:*",
     "@ai-series/loop": "workspace:*",
     "@ai-series/media": "workspace:*",
+    "@ai-series/ops": "workspace:*",
     "@ai-series/prompts": "workspace:*",
     "@ai-series/ui": "workspace:*",
     "dotenv": "catalog:",

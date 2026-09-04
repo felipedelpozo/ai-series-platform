@@ -34,6 +34,7 @@ export {
   tiktokAccounts,
   tiktokVideos,
   engagementImports,
+  costRecords,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";
