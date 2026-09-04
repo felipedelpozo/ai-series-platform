@@ -5,14 +5,14 @@ import reactHooks from "eslint-plugin-react-hooks";
 export default tseslint.config(
   {
     ignores: [
-      "node_modules/**",
-      ".next/**",
-      "dist/**",
-      "coverage/**",
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/dist/**",
+      "**/coverage/**",
       "next-env.d.ts",
-      "apps/web/.next/**",
       ".specify/**",
       "specs/**",
+      "bun.lock",
     ],
   },
   js.configs.recommended,
