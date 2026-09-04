@@ -37,6 +37,7 @@
         "@ai-series/qa": "workspace:*",
         "@ai-series/series": "workspace:*",
         "@ai-series/story": "workspace:*",
+        "@ai-series/tiktok": "workspace:*",
         "@ai-series/ui": "workspace:*",
         "dotenv": "catalog:",
         "drizzle-orm": "catalog:",
@@ -357,6 +358,19 @@
         "typescript": "catalog:",
       },
     },
+    "packages/tiktok": {
+      "name": "@ai-series/tiktok",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/audience": "workspace:*",
+        "@ai-series/db": "workspace:*",
+        "drizzle-orm": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/ui": {
       "name": "@ai-series/ui",
       "version": "0.0.0",
@@ -464,6 +478,8 @@
     "@ai-series/series": ["@ai-series/series@workspace:packages/series"],
 
     "@ai-series/story": ["@ai-series/story@workspace:packages/story"],
+
+    "@ai-series/tiktok": ["@ai-series/tiktok@workspace:packages/tiktok"],
 
     "@ai-series/ui": ["@ai-series/ui@workspace:packages/ui"],
 

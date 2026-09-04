@@ -509,3 +509,45 @@ export const episodeLoops = pgTable("episode_loops", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const tiktokAccounts = pgTable("tiktok_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  platformUsername: text("platform_username"),
+  providerAccountId: text("provider_account_id"),
+  status: text("status").notNull().default("manual"),
+  capabilities: jsonb("capabilities").$type<string[]>().notNull().default([]),
+  linkedAt: timestamp("linked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const tiktokVideos = pgTable("tiktok_videos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  episodeNumber: integer("episode_number").notNull(),
+  providerVideoId: text("provider_video_id"),
+  url: text("url"),
+  status: text("status").notNull().default("associated"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const engagementImports = pgTable("engagement_imports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  episodeNumber: integer("episode_number").notNull(),
+  source: text("source").notNull().default("manual"),
+  status: text("status").notNull().default("imported"),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+  signalCount: integer("signal_count").notNull().default(0),
+  correlationId: text("correlation_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

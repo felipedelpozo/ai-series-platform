@@ -18,4 +18,12 @@ describe("audience spam detection", () => {
     expect(detectSpam({ metadata: { optionLabel: "A" } })).toBe(false);
     expect(detectSpam({ metadata: { optionId: "opt-1" } })).toBe(false);
   });
+
+  it("accepts a pure like as valid engagement", () => {
+    expect(detectSpam({ liked: true })).toBe(false);
+  });
+
+  it("still flags links as spam even when liked", () => {
+    expect(detectSpam({ liked: true, comment: "http://spam.com" })).toBe(true);
+  });
 });
