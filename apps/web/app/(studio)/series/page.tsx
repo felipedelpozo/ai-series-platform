@@ -6,6 +6,7 @@ import { SeriesEntities } from "@/components/series-entities";
 import { SeriesStoryState } from "@/components/series-story-state";
 import { SeriesPlans } from "@/components/series-plans";
 import { SeriesDecisions } from "@/components/series-decisions";
+import { SeriesLoops } from "@/components/series-loops";
 
 type Series = { id: string; name: string; slug: string; status: string };
 type Bible = {
@@ -194,6 +195,9 @@ export default function SeriesPage() {
               </div>
               <div className="mt-2 border-t pt-2">
                 <SeriesDecisions seriesId={selected.id} />
+              </div>
+              <div className="mt-2 border-t pt-2">
+                <SeriesLoops seriesId={selected.id} />
               </div>
             </>
           )}

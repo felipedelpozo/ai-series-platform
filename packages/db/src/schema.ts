@@ -479,3 +479,33 @@ export const decisionCandidates = pgTable("decision_candidates", {
   rationale: text("rationale"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const branches = pgTable("branches", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  name: text("name").notNull(),
+  parentBranchId: uuid("parent_branch_id"),
+  baseEpisode: integer("base_episode").notNull(),
+  isCanonical: boolean("is_canonical").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const episodeLoops = pgTable("episode_loops", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  decisionId: uuid("decision_id").notNull(),
+  branchId: uuid("branch_id"),
+  fromEpisode: integer("from_episode").notNull(),
+  toEpisode: integer("to_episode").notNull(),
+  storyStateVersionBefore: integer("story_state_version_before"),
+  storyStateVersionAfter: integer("story_state_version_after"),
+  planId: uuid("plan_id"),
+  status: text("status").notNull().default("draft"),
+  transition: jsonb("transition").$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
