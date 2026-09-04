@@ -44,13 +44,17 @@
 - **Alternatives considered**: log-only health, an HTTP framework (Hono) — rejected to minimize
   dependencies.
 
-## Decision: ESLint + Prettier for lint/format
+## Decision: ESLint (flat config) + Prettier for lint/format
 
-- **Decision**: ESLint (flat config, typescript-eslint, Next.js plugin for `apps/web`) and
-  Prettier. `bun test` is the test runner.
-- **Rationale**: Next.js ships an ESLint integration; Prettier is the de-facto formatter. No
-  additional lint framework needed.
-- **Alternatives considered**: Biome — rejected to stay aligned with the Next.js ESLint toolchain.
+- **Decision**: ESLint 9 flat config with `@eslint/js`, `typescript-eslint` and
+  `eslint-plugin-react-hooks` (classic recommended rules). Prettier for formatting. `bun test`
+  is the test runner.
+- **Rationale**: `eslint-config-next` 16.3.4 is incompatible with Next 16.3.4 + Bun: its parser
+  resolves `next/babel`, which was removed in Next 16 (verified `node_modules/next/babel.js` is
+  absent and `require.resolve('next/babel')` fails under both Node and Bun). The chosen flat
+  config gives strict TypeScript and React hooks coverage without the removed preset.
+- **Alternatives considered**: `eslint-config-next` — rejected for the compatibility break;
+  Biome — rejected to stay on the established ESLint toolchain.
 
 ## Decision: Dev-only diagnostics gating
 

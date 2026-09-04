@@ -27,7 +27,8 @@ Presence-only snapshot used by the diagnostics page and the worker health endpoi
 | `id` | `string` | Stable key, e.g. `web`, `worker`, `database`, `generation` |
 | `label` | `string` | Human-readable label |
 | `configured` | `boolean` | Whether the subsystem's required env is present |
-| `status` | `"configured" \| "not-configured" \| "not-applicable"` | Derived state |
+| `status` | `"configured" \| "not-configured"` | Derived state |
 
 For this feature, `web` and `worker` are always `configured`; `database` and `generation` are
-presence-detected from optional env vars and remain `not-applicable` until their features land.
+presence-detected from optional env vars (`DATABASE_URL`, `FAL_KEY`) and report
+`configured`/`not-configured` accordingly.

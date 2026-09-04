@@ -17,8 +17,8 @@ Served by the worker process (`apps/worker`) on `WORKER_PORT` (default `8787`).
   "subsystems": [
     { "id": "web", "label": "Web", "configured": true, "status": "configured" },
     { "id": "worker", "label": "Worker", "configured": true, "status": "configured" },
-    { "id": "database", "label": "Database", "configured": false, "status": "not-applicable" },
-    { "id": "generation", "label": "Generation provider", "configured": false, "status": "not-applicable" }
+    { "id": "database", "label": "Database", "configured": false, "status": "not-configured" },
+    { "id": "generation", "label": "Generation provider", "configured": false, "status": "not-configured" }
   ],
   "timestamp": "2026-09-04T00:00:00.000Z"
 }
