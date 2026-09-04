@@ -19,7 +19,9 @@
       "dependencies": {
         "@ai-series/config": "workspace:*",
         "@ai-series/db": "workspace:*",
+        "@ai-series/prompts": "workspace:*",
         "@ai-series/ui": "workspace:*",
+        "dotenv": "catalog:",
         "lucide-react": "catalog:",
         "next": "catalog:",
         "react": "catalog:",
@@ -41,6 +43,7 @@
       "dependencies": {
         "@ai-series/config": "workspace:*",
         "@ai-series/db": "workspace:*",
+        "dotenv": "catalog:",
       },
       "devDependencies": {
         "@types/bun": "catalog:",
@@ -68,7 +71,21 @@
       },
       "devDependencies": {
         "@types/bun": "catalog:",
+        "dotenv": "catalog:",
         "drizzle-kit": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/prompts": {
+      "name": "@ai-series/prompts",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/db": "workspace:*",
+        "drizzle-orm": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "postgres": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -109,6 +126,7 @@
     "@types/react-dom": "19.2.7",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
+    "dotenv": "17.4.2",
     "drizzle-kit": "0.31.10",
     "drizzle-orm": "0.45.2",
     "eslint": "9.39.5",
@@ -129,6 +147,8 @@
     "@ai-series/config": ["@ai-series/config@workspace:packages/config"],
 
     "@ai-series/db": ["@ai-series/db@workspace:packages/db"],
+
+    "@ai-series/prompts": ["@ai-series/prompts@workspace:packages/prompts"],
 
     "@ai-series/ui": ["@ai-series/ui@workspace:packages/ui"],
 
@@ -505,6 +525,8 @@
     "deep-is": ["deep-is@0.1.4", "", {}, "sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ=="],
 
     "detect-libc": ["detect-libc@2.1.2", "", {}, "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ=="],
+
+    "dotenv": ["dotenv@17.4.2", "", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
 
     "drizzle-kit": ["drizzle-kit@0.31.10", "", { "dependencies": { "@drizzle-team/brocli": "^0.10.2", "@esbuild-kit/esm-loader": "^2.5.5", "esbuild": "^0.25.4", "tsx": "^4.21.0" }, "bin": { "drizzle-kit": "bin.cjs" } }, "sha512-7OZcmQUrdGI+DUNNsKBn1aW8qSoKuTH7d0mYgSP8bAzdFzKoovxEFnoGQp2dVs82EOJeYycqRtciopszwUf8bw=="],
 

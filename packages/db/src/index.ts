@@ -1,4 +1,11 @@
-export { workspace, auditLog } from "./schema";
+export {
+  workspace,
+  auditLog,
+  promptTemplates,
+  promptVersions,
+  promptSnapshots,
+} from "./schema";
+export type { PromptVariable } from "./schema";
 export {
   getDb,
   checkDb,

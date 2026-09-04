@@ -12,7 +12,9 @@
   "dependencies": {
     "@ai-series/config": "workspace:*",
     "@ai-series/db": "workspace:*",
+    "@ai-series/prompts": "workspace:*",
     "@ai-series/ui": "workspace:*",
+    "dotenv": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
