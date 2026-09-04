@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
     "@ai-series/fal",
     "@ai-series/generation",
     "@ai-series/jobs",
+    "@ai-series/loop",
     "@ai-series/media",
   ],
 };

@@ -141,6 +141,13 @@
       "when": 1788559068437,
       "tag": "0019_hesitant_sentry",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788559605979,
+      "tag": "0020_fat_snowbird",
+      "breakpoints": true
     }
   ]
 }

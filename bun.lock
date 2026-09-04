@@ -29,6 +29,7 @@
         "@ai-series/fal": "workspace:*",
         "@ai-series/generation": "workspace:*",
         "@ai-series/jobs": "workspace:*",
+        "@ai-series/loop": "workspace:*",
         "@ai-series/media": "workspace:*",
         "@ai-series/planner": "workspace:*",
         "@ai-series/production": "workspace:*",
@@ -239,6 +240,21 @@
         "typescript": "catalog:",
       },
     },
+    "packages/loop": {
+      "name": "@ai-series/loop",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/db": "workspace:*",
+        "@ai-series/planner": "workspace:*",
+        "@ai-series/production": "workspace:*",
+        "@ai-series/story": "workspace:*",
+        "drizzle-orm": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/media": {
       "name": "@ai-series/media",
       "version": "0.0.0",
@@ -432,6 +448,8 @@
     "@ai-series/generation": ["@ai-series/generation@workspace:packages/generation"],
 
     "@ai-series/jobs": ["@ai-series/jobs@workspace:packages/jobs"],
+
+    "@ai-series/loop": ["@ai-series/loop@workspace:packages/loop"],
 
     "@ai-series/media": ["@ai-series/media@workspace:packages/media"],
 

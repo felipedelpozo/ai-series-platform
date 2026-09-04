@@ -29,6 +29,8 @@ export {
   audienceSignals,
   audienceDecisions,
   decisionCandidates,
+  branches,
+  episodeLoops,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";

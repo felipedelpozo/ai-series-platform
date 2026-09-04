@@ -27,6 +27,7 @@
     "@ai-series/fal": "workspace:*",
     "@ai-series/generation": "workspace:*",
     "@ai-series/jobs": "workspace:*",
+    "@ai-series/loop": "workspace:*",
     "@ai-series/media": "workspace:*",
     "@ai-series/prompts": "workspace:*",
     "@ai-series/ui": "workspace:*",
