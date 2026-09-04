@@ -17,6 +17,7 @@
       "name": "@ai-series/web",
       "version": "0.0.0",
       "dependencies": {
+        "@ai-series/audio": "workspace:*",
         "@ai-series/comfy": "workspace:*",
         "@ai-series/config": "workspace:*",
         "@ai-series/db": "workspace:*",
@@ -72,6 +73,18 @@
         "@ai-sdk/openai": "catalog:",
         "ai": "catalog:",
         "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/audio": {
+      "name": "@ai-series/audio",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/db": "workspace:*",
+        "drizzle-orm": "catalog:",
       },
       "devDependencies": {
         "@types/bun": "catalog:",
@@ -353,6 +366,8 @@
     "@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@5.0.36", "", { "dependencies": { "@ai-sdk/provider": "4.0.10", "@standard-schema/spec": "^1.1.0", "@workflow/serde": "4.1.0", "eventsource-parser": "^3.0.8", "undici": "^7.29.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-MFXBn6XDyf37PNQAge/HTatPJE8Vmg/g/w4WPtjSV53jq8FKAzoaN5+43hsdQa9bqgN+/13jxug9ChvsG+godQ=="],
 
     "@ai-series/ai": ["@ai-series/ai@workspace:packages/ai"],
+
+    "@ai-series/audio": ["@ai-series/audio@workspace:packages/audio"],
 
     "@ai-series/comfy": ["@ai-series/comfy@workspace:packages/comfy"],
 
