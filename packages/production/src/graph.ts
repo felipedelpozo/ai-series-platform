@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import {
+  assets,
   generationSteps,
   jobs,
   scenes,
@@ -164,4 +165,20 @@ export async function generateAllVideos(db: Db, planId: string): Promise<number>
     if (!reused) created++;
   }
   return created;
+}
+
+export async function getShotPreview(db: Db, shotId: string) {
+  const steps = await listShotSteps(db, shotId);
+  let keyframeAsset = null;
+  let videoAsset = null;
+  for (const step of steps) {
+    if (!step.jobId) continue;
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, step.jobId));
+    if (!job?.generationId) continue;
+    const [asset] = await db.select().from(assets).where(eq(assets.generationId, job.generationId));
+    if (!asset) continue;
+    if (step.kind === "keyframe") keyframeAsset = asset;
+    else videoAsset = asset;
+  }
+  return { keyframeAsset, videoAsset, steps };
 }
