@@ -320,3 +320,22 @@ export const shots = pgTable("shots", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const generationSteps = pgTable(
+  "generation_steps",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shotId: uuid("shot_id")
+      .notNull()
+      .references(() => shots.id),
+    kind: text("kind").notNull(),
+    status: text("status").notNull().default("pending"),
+    jobId: uuid("job_id"),
+    promptSnapshotId: uuid("prompt_snapshot_id"),
+    input: jsonb("input").$type<Record<string, unknown>>(),
+    output: jsonb("output").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("generation_steps_shot_kind_idx").on(table.shotId, table.kind)],
+);
