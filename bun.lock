@@ -21,6 +21,7 @@
         "@ai-series/db": "workspace:*",
         "@ai-series/fal": "workspace:*",
         "@ai-series/generation": "workspace:*",
+        "@ai-series/media": "workspace:*",
         "@ai-series/prompts": "workspace:*",
         "@ai-series/ui": "workspace:*",
         "dotenv": "catalog:",
@@ -106,6 +107,19 @@
         "typescript": "catalog:",
       },
     },
+    "packages/media": {
+      "name": "@ai-series/media",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/db": "workspace:*",
+        "drizzle-orm": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "postgres": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/prompts": {
       "name": "@ai-series/prompts",
       "version": "0.0.0",
@@ -182,6 +196,8 @@
     "@ai-series/fal": ["@ai-series/fal@workspace:packages/fal"],
 
     "@ai-series/generation": ["@ai-series/generation@workspace:packages/generation"],
+
+    "@ai-series/media": ["@ai-series/media@workspace:packages/media"],
 
     "@ai-series/prompts": ["@ai-series/prompts@workspace:packages/prompts"],
 

@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
-import { assets, getDb } from "@ai-series/db";
+import { getDb } from "@ai-series/db";
+import { listAssets } from "@ai-series/media";
 
 export async function GET(request: Request) {
-  const kind = new URL(request.url).searchParams.get("kind") ?? undefined;
-  const rows = await getDb()
-    .select()
-    .from(assets)
-    .where(kind ? eq(assets.kind, kind) : undefined)
-    .orderBy(desc(assets.createdAt))
-    .limit(100);
+  const url = new URL(request.url);
+  const filters = {
+    kind: url.searchParams.get("kind") ?? undefined,
+    source: url.searchParams.get("source") ?? undefined,
+    status: url.searchParams.get("status") ?? undefined,
+  };
+  const rows = await listAssets(getDb(), filters);
   return NextResponse.json({ assets: rows });
 }

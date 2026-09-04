@@ -8,7 +8,7 @@ coverage/
 apps/web/playwright-report/
 apps/web/test-results/
 .media/
-media/
+/media/
 .env
 .env.*
 !.env.example
