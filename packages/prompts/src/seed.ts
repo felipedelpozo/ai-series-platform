@@ -139,6 +139,20 @@ const SEEDS = [
       { name: "story_state", required: true },
     ],
   },
+  {
+    purpose: "audience.classify",
+    name: "Audience Classify",
+    template:
+      'Classify each audience signal. Signals: {{signals}}. Return JSON with a "classifications" array; each item has: id (the signal id) and intent (one of "vote", "suggestion", "reaction").',
+    variables: [{ name: "signals", required: true }],
+  },
+  {
+    purpose: "audience.decide",
+    name: "Audience Decide",
+    template:
+      'Given these scored candidates {{candidates}}, write a concise editorial decision. Return JSON with: title, summary, rationale (explain why the top candidate was chosen and how confidence should be interpreted).',
+    variables: [{ name: "candidates", required: true }],
+  },
 ];
 
 export async function seedPrompts(db: Db): Promise<void> {
