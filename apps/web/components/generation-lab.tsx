@@ -12,12 +12,16 @@ type Generation = {
   requestId: string | null;
   error: string | null;
   model: string;
+  kind: string;
 };
-type Asset = { id: string; url: string; mime: string };
+type Asset = { id: string; url: string; mime: string; kind: string };
 
 export function GenerationLab() {
+  const [mode, setMode] = useState<"image" | "video">("image");
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [imageAssets, setImageAssets] = useState<Asset[]>([]);
   const [templateId, setTemplateId] = useState<string>("");
+  const [sourceAssetId, setSourceAssetId] = useState<string>("");
   const [version, setVersion] = useState<Version | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [paramsJson, setParamsJson] = useState("{}");
@@ -31,16 +35,28 @@ export function GenerationLab() {
     fetch("/api/prompts")
       .then((r) => r.json())
       .then((d) => {
-        const filtered = (d.templates as Template[]).filter(
-          (t) => t.purpose === "test.image" || t.purpose === "image.generate",
+        const imagePurposes = new Set(["test.image", "image.generate"]);
+        const videoPurposes = new Set(["test.video", "video.generate"]);
+        setTemplates(
+          (d.templates as Template[]).filter((t) =>
+            mode === "image" ? imagePurposes.has(t.purpose) : videoPurposes.has(t.purpose),
+          ),
         );
-        setTemplates(filtered);
       })
       .catch(() => setError("Failed to load templates"));
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode === "video") {
+      fetch("/api/assets?kind=image")
+        .then((r) => r.json())
+        .then((d) => setImageAssets(d.assets as Asset[]))
+        .catch(() => undefined);
+    }
+  }, [mode]);
 
   async function selectTemplate(id: string) {
     setTemplateId(id);
@@ -76,7 +92,13 @@ export function GenerationLab() {
     const res = await fetch("/api/generations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ templateId, variables: values, params }),
+      body: JSON.stringify({
+        type: mode,
+        templateId,
+        variables: values,
+        params,
+        sourceAssetId: mode === "video" && sourceAssetId ? sourceAssetId : undefined,
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -90,6 +112,7 @@ export function GenerationLab() {
       requestId: data.requestId,
       error: null,
       model: "",
+      kind: mode,
     });
     setBusy(false);
     poll(data.id);
@@ -109,13 +132,29 @@ export function GenerationLab() {
         setError(gen.error ?? "Generation failed");
         if (timerRef.current) clearInterval(timerRef.current);
       }
-    }, 2000);
+    }, 3000);
   }
 
   return (
     <div className="grid grid-cols-[340px_1fr] gap-4">
       <div className="flex flex-col gap-3 rounded-lg border p-4">
-        <h3 className="text-sm font-semibold">Generate image</h3>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={mode === "image" ? "default" : "outline"}
+            onClick={() => setMode("image")}
+          >
+            Image
+          </Button>
+          <Button
+            size="sm"
+            variant={mode === "video" ? "default" : "outline"}
+            onClick={() => setMode("video")}
+          >
+            Video
+          </Button>
+        </div>
+
         <label className="text-xs text-muted-foreground">
           Template
           <select
@@ -131,6 +170,24 @@ export function GenerationLab() {
             ))}
           </select>
         </label>
+
+        {mode === "video" && imageAssets.length > 0 && (
+          <label className="text-xs text-muted-foreground">
+            Source image (optional, image-to-video)
+            <select
+              value={sourceAssetId}
+              onChange={(event) => setSourceAssetId(event.target.value)}
+              className="mt-1 block w-full rounded-md border bg-background px-2 py-1 text-sm"
+            >
+              <option value="">None (text-to-video)</option>
+              {imageAssets.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.id.slice(0, 8)}…
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {version && (
           <>
@@ -180,16 +237,19 @@ export function GenerationLab() {
             )}
           </div>
         )}
-        {asset && (
+        {asset && asset.kind === "image" && (
           <img
             src={asset.url}
             alt="Generated"
             className="mt-3 max-h-[480px] rounded-lg border object-contain"
           />
         )}
+        {asset && asset.kind === "video" && (
+          <video src={asset.url} controls className="mt-3 max-h-[480px] rounded-lg border" />
+        )}
         {!generation && !asset && (
           <p className="mt-2 text-sm text-muted-foreground">
-            Select a template and generate a real image.
+            Select a template and generate a real {mode}.
           </p>
         )}
       </div>

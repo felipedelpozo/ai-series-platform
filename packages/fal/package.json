@@ -9,7 +9,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "test:live:fal": "FAL_LIVE=1 bun test src/live.test.ts"
+    "test:live:fal": "FAL_LIVE=1 bun test src/live.test.ts",
+    "test:live:fal:video": "FAL_LIVE=1 bun test src/video-live.test.ts"
   },
   "dependencies": {
     "@fal-ai/client": "catalog:",

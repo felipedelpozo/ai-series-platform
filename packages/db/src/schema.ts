@@ -87,6 +87,7 @@ export const generations = pgTable("generations", {
   promptSnapshotId: uuid("prompt_snapshot_id"),
   provider: text("provider").notNull().default("fal"),
   model: text("model").notNull(),
+  kind: text("kind").notNull().default("image"),
   status: text("status").notNull().default("queued"),
   requestId: text("request_id"),
   params: jsonb("params").$type<Record<string, unknown>>(),
