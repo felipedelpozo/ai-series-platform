@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@ai-series/ui";
+import { SeriesEntities } from "@/components/series-entities";
 
 type Series = { id: string; name: string; slug: string; status: string };
 type Bible = {
@@ -177,6 +178,10 @@ export default function SeriesPage() {
                 <Button variant="outline" onClick={saveBible}>
                   Save revision
                 </Button>
+              </div>
+
+              <div className="mt-2 border-t pt-2">
+                <SeriesEntities seriesId={selected.id} />
               </div>
             </>
           )}

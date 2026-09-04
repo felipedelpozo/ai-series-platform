@@ -50,6 +50,13 @@
       "when": 1788554759350,
       "tag": "0006_sleepy_ender_wiggin",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788555071208,
+      "tag": "0007_old_spiral",
+      "breakpoints": true
     }
   ]
 }
