@@ -339,3 +339,19 @@ export const generationSteps = pgTable(
   },
   (table) => [uniqueIndex("generation_steps_shot_kind_idx").on(table.shotId, table.kind)],
 );
+
+export const directorSessions = pgTable("director_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  shotId: uuid("shot_id")
+    .notNull()
+    .references(() => shots.id),
+  status: text("status").notNull().default("idle"),
+  initialPrompt: text("initial_prompt"),
+  aspectRatio: text("aspect_ratio"),
+  resolution: text("resolution"),
+  memory: text("memory"),
+  promptVersion: integer("prompt_version").notNull().default(0),
+  currentPrompt: text("current_prompt"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

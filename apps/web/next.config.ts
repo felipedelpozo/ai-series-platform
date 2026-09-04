@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
     "@ai-series/story",
     "@ai-series/planner",
     "@ai-series/production",
+    "@ai-series/director",
     "@ai-series/ai",
     "@ai-series/prompts",
     "@ai-series/fal",
