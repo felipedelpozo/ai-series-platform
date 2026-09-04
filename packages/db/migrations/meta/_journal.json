@@ -99,6 +99,13 @@
       "when": 1788557237739,
       "tag": "0013_good_norman_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788557407741,
+      "tag": "0014_fresh_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

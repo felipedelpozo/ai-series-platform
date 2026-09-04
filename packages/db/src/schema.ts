@@ -355,3 +355,13 @@ export const directorSessions = pgTable("director_sessions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const comfyWorkflows = pgTable("comfy_workflows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  version: text("version").notNull().default("1"),
+  params: jsonb("params").$type<Record<string, unknown>>().notNull().default({}),
+  status: text("status").notNull().default("registered"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
