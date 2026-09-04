@@ -23,6 +23,7 @@
         "@ai-series/composition": "workspace:*",
         "@ai-series/config": "workspace:*",
         "@ai-series/db": "workspace:*",
+        "@ai-series/decision": "workspace:*",
         "@ai-series/director": "workspace:*",
         "@ai-series/entities": "workspace:*",
         "@ai-series/fal": "workspace:*",
@@ -152,6 +153,21 @@
         "@types/bun": "catalog:",
         "dotenv": "catalog:",
         "drizzle-kit": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/decision": {
+      "name": "@ai-series/decision",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/ai": "workspace:*",
+        "@ai-series/db": "workspace:*",
+        "@ai-series/prompts": "workspace:*",
+        "drizzle-orm": "catalog:",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -404,6 +420,8 @@
     "@ai-series/config": ["@ai-series/config@workspace:packages/config"],
 
     "@ai-series/db": ["@ai-series/db@workspace:packages/db"],
+
+    "@ai-series/decision": ["@ai-series/decision@workspace:packages/decision"],
 
     "@ai-series/director": ["@ai-series/director@workspace:packages/director"],
 

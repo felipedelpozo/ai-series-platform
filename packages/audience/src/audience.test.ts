@@ -13,4 +13,9 @@ describe("audience spam detection", () => {
   it("accepts normal comments", () => {
     expect(detectSpam({ comment: "me gusta la opción A" })).toBe(false);
   });
+
+  it("accepts explicit option votes without free text", () => {
+    expect(detectSpam({ metadata: { optionLabel: "A" } })).toBe(false);
+    expect(detectSpam({ metadata: { optionId: "opt-1" } })).toBe(false);
+  });
 });

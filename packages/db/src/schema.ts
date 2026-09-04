@@ -3,6 +3,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  real,
   text,
   timestamp,
   uniqueIndex,
@@ -439,3 +440,42 @@ export const audienceSignals = pgTable(
   },
   (table) => [uniqueIndex("audience_signals_platform_source_idx").on(table.platform, table.sourceId)],
 );
+
+export const audienceDecisions = pgTable("audience_decisions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  episodeNumber: integer("episode_number").notNull(),
+  windowId: uuid("window_id"),
+  status: text("status").notNull().default("proposed"),
+  title: text("title"),
+  summary: text("summary"),
+  rationale: text("rationale"),
+  confidence: real("confidence").notNull().default(0),
+  rules: jsonb("rules").$type<Record<string, unknown>>().notNull().default({}),
+  snapshot: jsonb("snapshot").$type<Record<string, unknown>>().notNull().default({}),
+  classifySnapshotId: uuid("classify_snapshot_id"),
+  decideSnapshotId: uuid("decide_snapshot_id"),
+  winningCandidateId: uuid("winning_candidate_id"),
+  approvedBy: text("approved_by"),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const decisionCandidates = pgTable("decision_candidates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  decisionId: uuid("decision_id")
+    .notNull()
+    .references(() => audienceDecisions.id),
+  label: text("label").notNull(),
+  summary: text("summary"),
+  intent: text("intent").notNull().default("suggestion"),
+  signalIds: jsonb("signal_ids").$type<string[]>().notNull().default([]),
+  signalCount: integer("signal_count").notNull().default(0),
+  score: real("score").notNull().default(0),
+  isWinner: boolean("is_winner").notNull().default(false),
+  rationale: text("rationale"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

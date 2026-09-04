@@ -12,7 +12,17 @@ export type SignalInput = {
   metadata?: Record<string, unknown>;
 };
 
-export function detectSpam(input: { comment?: string; reaction?: string }): boolean {
+export function detectSpam(input: {
+  comment?: string;
+  reaction?: string;
+  metadata?: Record<string, unknown>;
+}): boolean {
+  const optionLabel = input.metadata?.optionLabel;
+  const optionId = input.metadata?.optionId;
+  const hasExplicitOption =
+    (typeof optionLabel === "string" && optionLabel.trim().length > 0) ||
+    (typeof optionId === "string" && optionId.trim().length > 0);
+  if (hasExplicitOption) return false;
   const text = `${input.comment ?? ""} ${input.reaction ?? ""}`.trim();
   if (!text) return true;
   if (/https?:\/\//.test(text)) return true;
