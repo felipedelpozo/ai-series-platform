@@ -82,6 +82,23 @@ const SEEDS = [
       { name: "audience_decision", required: false, default: "none" },
     ],
   },
+  {
+    purpose: "scene.plan",
+    name: "Scene & Shot Plan",
+    template:
+      'Given the episode plan {{episode_plan}}, create a scene/shot breakdown. Return JSON with a "scenes" array; each scene has: purpose, locationId, characterIds (array), propIds (array), action, dialogue, estimatedDuration, entryContinuity, exitContinuity, and shots (array of: type, subject, action, composition, camera, lens, lighting, emotion, requiredReferences (array), imagePrompt, videoPrompt, continuityConstraints (array)).',
+    variables: [{ name: "episode_plan", required: true }],
+  },
+  {
+    purpose: "shot.plan",
+    name: "Shot Plan",
+    template:
+      'Given the scene {{scene}} and shot index {{shot_index}}, create one cinematic shot. Return JSON with: type, subject, action, composition, camera, lens, lighting, emotion, requiredReferences (array), imagePrompt, videoPrompt, continuityConstraints (array).',
+    variables: [
+      { name: "scene", required: true },
+      { name: "shot_index", required: true },
+    ],
+  },
 ];
 
 export async function seedPrompts(db: Db): Promise<void> {
