@@ -13,5 +13,6 @@ export {
   listScenesWithShots,
   updateShotStatus,
   reorderShots,
+  updateShotData,
 } from "./scenes";
 export type { Scene, Shot } from "./scenes";

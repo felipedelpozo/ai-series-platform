@@ -105,6 +105,14 @@ export async function updateShotStatus(db: Db, shotId: string, status: string): 
   await db.update(shots).set({ status, updatedAt: new Date() }).where(eq(shots.id, shotId));
 }
 
+export async function updateShotData(
+  db: Db,
+  shotId: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  await db.update(shots).set({ data, updatedAt: new Date() }).where(eq(shots.id, shotId));
+}
+
 export async function reorderShots(db: Db, sceneId: string, shotIds: string[]): Promise<void> {
   await db.transaction(async (tx) => {
     for (let i = 0; i < shotIds.length; i++) {

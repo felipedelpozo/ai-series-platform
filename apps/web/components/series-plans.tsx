@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@ai-series/ui";
 
 type Plan = {
@@ -111,6 +112,9 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
             <button onClick={() => generateShots(p.id, "video")} className="underline">
               videos
             </button>
+            <Link href={`/studio/${p.id}`} className="underline">
+              studio
+            </Link>
           </li>
         ))}
       </ul>
