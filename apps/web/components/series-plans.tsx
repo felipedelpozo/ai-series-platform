@@ -12,11 +12,14 @@ type Plan = {
   isActive: boolean;
 };
 
+type Scene = { id: string; order: number; data: { purpose: string }; shots: { id: string; data: { type: string } }[] };
+
 export function SeriesPlans({ seriesId }: { seriesId: string }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [episode, setEpisode] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scenes, setScenes] = useState<Record<string, Scene[]>>({});
 
   function load() {
     fetch(`/api/series/${seriesId}/plans`)
@@ -50,6 +53,18 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
     load();
   }
 
+  async function generateScenes(planId: string) {
+    const res = await fetch(`/api/plans/${planId}/scenes`, { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "Scene generation failed");
+      return;
+    }
+    setError(null);
+    const list = await (await fetch(`/api/plans/${planId}/scenes`)).json();
+    setScenes((prev) => ({ ...prev, [planId]: list.scenes }));
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -76,9 +91,21 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
                 approve
               </button>
             )}
+            <button onClick={() => generateScenes(p.id)} className="underline">
+              scenes
+            </button>
           </li>
         ))}
       </ul>
+      {Object.entries(scenes).map(([planId, list]) => (
+        <ul key={planId} className="mt-1 flex flex-col gap-1 pl-4">
+          {list.map((scene) => (
+            <li key={scene.id} className="text-xs text-muted-foreground">
+              scene {scene.order + 1}: {scene.data.purpose} · {scene.shots.length} shots
+            </li>
+          ))}
+        </ul>
+      ))}
     </div>
   );
 }

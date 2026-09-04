@@ -292,3 +292,31 @@ export const episodePlans = pgTable(
     ),
   ],
 );
+
+export const scenes = pgTable("scenes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  planId: uuid("plan_id")
+    .notNull()
+    .references(() => episodePlans.id),
+  episodeNumber: integer("episode_number").notNull(),
+  order: integer("order").notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+  status: text("status").notNull().default("draft"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const shots = pgTable("shots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sceneId: uuid("scene_id")
+    .notNull()
+    .references(() => scenes.id),
+  order: integer("order").notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+  status: text("status").notNull().default("draft"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

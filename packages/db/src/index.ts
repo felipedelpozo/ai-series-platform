@@ -17,6 +17,8 @@ export {
   referenceSheets,
   storyStates,
   episodePlans,
+  scenes,
+  shots,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";
