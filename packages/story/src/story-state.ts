@@ -11,7 +11,7 @@ export const StoryStateSchema = z.object({
         name: z.string(),
         location: z.string().default(""),
         state: z.string().default(""),
-        relationships: z.record(z.string(), z.number()).default({}),
+        relationships: z.array(z.object({ character: z.string(), trust: z.number() })).default([]),
       }),
     )
     .default([]),
@@ -26,6 +26,28 @@ export const StoryStateSchema = z.object({
   canon: z.array(z.string()).default([]),
 });
 export type StoryState = z.infer<typeof StoryStateSchema>;
+
+export const StoryStateStrictSchema = z.object({
+  currentEpisode: z.number().int().min(1),
+  characters: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      location: z.string(),
+      state: z.string(),
+      relationships: z.array(z.object({ character: z.string(), trust: z.number() })),
+    }),
+  ),
+  inventory: z.array(z.string()),
+  facts: z.array(z.string()),
+  goals: z.array(z.string()),
+  secretsKnown: z.array(z.string()),
+  secretsUnknown: z.array(z.string()),
+  openQuestions: z.array(z.string()),
+  pastDecisions: z.array(z.string()),
+  pendingConsequences: z.array(z.string()),
+  canon: z.array(z.string()),
+});
 
 export async function recordStoryState(
   db: Db,

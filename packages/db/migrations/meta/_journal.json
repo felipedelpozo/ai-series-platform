@@ -71,6 +71,13 @@
       "when": 1788555682341,
       "tag": "0009_loving_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788556084035,
+      "tag": "0010_living_zeigeist",
+      "breakpoints": true
     }
   ]
 }

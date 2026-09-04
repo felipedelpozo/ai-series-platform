@@ -267,3 +267,28 @@ export const storyStates = pgTable("story_states", {
   isCurrent: boolean("is_current").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const episodePlans = pgTable(
+  "episode_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id),
+    episodeNumber: integer("episode_number").notNull(),
+    version: integer("version").notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+    status: text("status").notNull().default("draft"),
+    source: text("source").notNull().default("manual"),
+    promptSnapshotId: uuid("prompt_snapshot_id"),
+    isActive: boolean("is_active").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("episode_plans_series_episode_version_idx").on(
+      table.seriesId,
+      table.episodeNumber,
+      table.version,
+    ),
+  ],
+);
