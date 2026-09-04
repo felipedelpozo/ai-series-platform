@@ -111,6 +111,34 @@ const SEEDS = [
     template: "{{prompt}}",
     variables: [{ name: "prompt", required: true }],
   },
+  {
+    purpose: "qa.narrative",
+    name: "QA Narrative",
+    template:
+      'Review the episode plan {{episode_plan}} for narrative coherence against the story state {{story_state}} and bible {{series_bible}}. Return JSON with a "findings" array; each finding has: check ("qa.narrative"), severity ("low"|"medium"|"high"), evidence, target, repair.',
+    variables: [
+      { name: "episode_plan", required: true },
+      { name: "story_state", required: true },
+      { name: "series_bible", required: true },
+    ],
+  },
+  {
+    purpose: "qa.visual",
+    name: "QA Visual",
+    template:
+      'Review the shot list {{shot_list}} for visual consistency. Return JSON with a "findings" array; each finding has: check ("qa.visual"), severity, evidence, target, repair.',
+    variables: [{ name: "shot_list", required: true }],
+  },
+  {
+    purpose: "qa.continuity",
+    name: "QA Continuity",
+    template:
+      'Review the shot list {{shot_list}} for continuity contradictions against the story state {{story_state}}. Return JSON with a "findings" array; each finding has: check ("qa.continuity"), severity, evidence, target, repair.',
+    variables: [
+      { name: "shot_list", required: true },
+      { name: "story_state", required: true },
+    ],
+  },
 ];
 
 export async function seedPrompts(db: Db): Promise<void> {
