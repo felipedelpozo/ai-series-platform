@@ -254,3 +254,16 @@ export const referenceSheets = pgTable("reference_sheets", {
   panels: text("panels"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const storyStates = pgTable("story_states", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  version: integer("version").notNull(),
+  kind: text("kind").notNull().default("before"),
+  episode: integer("episode"),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+  isCurrent: boolean("is_current").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
