@@ -11,3 +11,9 @@ export {
   PropSchema,
 } from "./entities";
 export type { EntityType } from "./entities";
+export {
+  generateReferenceSheet,
+  listReferenceSheets,
+  updateReferenceSheetStatus,
+  promoteReferenceSheet,
+} from "./references";

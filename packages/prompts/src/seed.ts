@@ -55,6 +55,20 @@ const SEEDS = [
       { name: "series_name", required: true },
     ],
   },
+  {
+    purpose: "reference.sheet",
+    name: "Reference Sheet",
+    template:
+      'Create a consistent visual reference sheet for the {{entity_type}} named "{{entity_name}}" in the series "{{series_name}}". Entity details: {{entity_data}}. Visual style: {{visual_style}}. Include these panels/views: {{panels}}.',
+    variables: [
+      { name: "entity_type", required: true },
+      { name: "entity_name", required: true },
+      { name: "entity_data", required: true },
+      { name: "series_name", required: true },
+      { name: "visual_style", required: false, default: "consistent with the series bible" },
+      { name: "panels", required: false, default: "front, side, three-quarter" },
+    ],
+  },
 ];
 
 export async function seedPrompts(db: Db): Promise<void> {

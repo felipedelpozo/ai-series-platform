@@ -242,3 +242,15 @@ export const referenceAssets = pgTable("reference_assets", {
   status: text("status").notNull().default("approved"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const referenceSheets = pgTable("reference_sheets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  entityId: uuid("entity_id")
+    .notNull()
+    .references(() => entities.id),
+  entityVersionId: uuid("entity_version_id").notNull(),
+  jobId: uuid("job_id"),
+  status: text("status").notNull().default("draft"),
+  panels: text("panels"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
