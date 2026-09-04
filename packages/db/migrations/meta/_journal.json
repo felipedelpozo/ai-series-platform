@@ -43,6 +43,13 @@
       "when": 1788554264704,
       "tag": "0005_flashy_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788554759350,
+      "tag": "0006_sleepy_ender_wiggin",
+      "breakpoints": true
     }
   ]
 }

@@ -9,7 +9,10 @@ export {
   jobs,
   jobAttempts,
   jobEvents,
+  series,
+  seriesBibles,
 } from "./schema";
+export * as schema from "./schema";
 export type { PromptVariable } from "./schema";
 export {
   getDb,

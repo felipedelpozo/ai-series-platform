@@ -18,6 +18,13 @@ const SEEDS = [
     template: "Generate a short test video of {{subject}}.",
     variables: [{ name: "subject", required: true }],
   },
+  {
+    purpose: "series.bible",
+    name: "Series Bible",
+    template:
+      'You are an experienced showrunner. Create a structured series bible for the series named "{{series_name}}". Return JSON with: title, premise, genre, tone, audience, format, language, episodeDuration, narrativeRules (array of strings), visualStyle, canon (array of non-contradictory facts), prohibitions (array of creative limits), description.',
+    variables: [{ name: "series_name", required: true }],
+  },
 ];
 
 export async function seedPrompts(db: Db): Promise<void> {
