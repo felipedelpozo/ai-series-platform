@@ -203,3 +203,42 @@ export const seriesBibles = pgTable(
   },
   (table) => [uniqueIndex("series_bibles_series_version_idx").on(table.seriesId, table.version)],
 );
+
+export const entities = pgTable("entities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  type: text("type").notNull(),
+  name: text("name").notNull(),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const entityVersions = pgTable(
+  "entity_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entityId: uuid("entity_id")
+      .notNull()
+      .references(() => entities.id),
+    version: integer("version").notNull(),
+    name: text("name").notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+    isActive: boolean("is_active").notNull().default(false),
+    source: text("source").notNull().default("manual"),
+    promptSnapshotId: uuid("prompt_snapshot_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("entity_versions_entity_version_idx").on(table.entityId, table.version)],
+);
+
+export const referenceAssets = pgTable("reference_assets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  entityType: text("entity_type").notNull(),
+  entityId: uuid("entity_id").notNull(),
+  assetId: uuid("asset_id").notNull(),
+  status: text("status").notNull().default("approved"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
