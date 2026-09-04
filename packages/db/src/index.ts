@@ -24,6 +24,7 @@ export {
   comfyWorkflows,
   qaFindings,
   audioTracks,
+  episodeExports,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";
