@@ -1,13 +1,15 @@
 import { notFound } from "next/navigation";
+import { checkDb } from "@ai-series/db";
 import { getAppConfig } from "@/lib/config";
 import { isDiagnosticsEnabled } from "@/lib/diagnostics";
 
-export default function DiagnosticsPage() {
+export default async function DiagnosticsPage() {
   if (!isDiagnosticsEnabled(process.env.NODE_ENV)) {
     notFound();
   }
 
   const config = getAppConfig();
+  const database = await checkDb();
 
   return (
     <main className="p-8">
@@ -31,6 +33,8 @@ export default function DiagnosticsPage() {
           ))}
         </tbody>
       </table>
+      <h2 className="mt-8 text-lg font-semibold">Database</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{database.ok ? "up" : "down"}</p>
     </main>
   );
 }

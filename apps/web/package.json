@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ai-series/config": "workspace:*",
+    "@ai-series/db": "workspace:*",
     "@ai-series/ui": "workspace:*",
     "lucide-react": "catalog:",
     "next": "catalog:",

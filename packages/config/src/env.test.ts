@@ -41,4 +41,22 @@ describe("loadEnv", () => {
     expect(withSecrets.subsystems.find((s) => s.id === "database")?.configured).toBe(true);
     expect(withSecrets.subsystems.find((s) => s.id === "generation")?.configured).toBe(true);
   });
+
+  it("rejects a malformed DATABASE_URL", () => {
+    expect(() => loadEnv({ DATABASE_URL: "not-a-url" })).toThrow(EnvValidationError);
+    expect(() => loadEnv({ DATABASE_URL: "https://user:pw@host/db" })).toThrow(EnvValidationError);
+  });
+
+  it("names DATABASE_URL without leaking credentials on an invalid URL", () => {
+    let caught: unknown;
+    try {
+      loadEnv({ DATABASE_URL: "https://user:supersecret@host/db" });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(EnvValidationError);
+    const message = (caught as Error).message;
+    expect(message).toContain("DATABASE_URL");
+    expect(message).not.toContain("supersecret");
+  });
 });

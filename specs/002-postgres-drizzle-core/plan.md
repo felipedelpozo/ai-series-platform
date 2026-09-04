@@ -38,7 +38,6 @@ packages/db/
 ├── src/
 │   ├── schema.ts            # workspace, auditLog tables
 │   ├── client.ts            # getDb(), checkDb(), ensureDefaultWorkspace()
-│   ├── migrate.ts           # programmatic migrate()
 │   ├── index.ts             # barrel
 │   └── db.integration.test.ts
 ├── tsconfig.json

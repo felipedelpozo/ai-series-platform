@@ -21,12 +21,24 @@ export type EnvInput = Record<string, string | undefined>;
 
 const portSchema = z.coerce.number().int().min(1).max(65535);
 
+const postgresUrlSchema = z
+  .string()
+  .min(1)
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "postgres:" || url.protocol === "postgresql:";
+    } catch {
+      return false;
+    }
+  }, "must be a valid postgres:// URL");
+
 export const envSchema = z.object({
   APP_ENV: z.enum(["development", "test", "production"]).default("development"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   WEB_PORT: portSchema.optional(),
   WORKER_PORT: portSchema.default(8787),
-  DATABASE_URL: z.string().min(1).optional(),
+  DATABASE_URL: postgresUrlSchema.optional(),
   FAL_KEY: z.string().min(1).optional(),
 });
 
