@@ -78,6 +78,14 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
     });
   }
 
+  async function exportPlan() {
+    const res = await fetch(`/api/plans/${planId}/export`, { method: "POST" });
+    if (res.ok) {
+      const data = await res.json();
+      window.open(`/api/assets/${data.assetId}/content`, "_blank");
+    }
+  }
+
   return (
     <div className="flex h-full gap-4">
       <div className="w-64 shrink-0 overflow-y-auto rounded-lg border p-3">
@@ -149,6 +157,9 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
             </Button>
             <Button variant="outline" onClick={generateVoice}>
               Generate voice
+            </Button>
+            <Button variant="outline" onClick={exportPlan}>
+              Export episode
             </Button>
           </>
         )}

@@ -120,6 +120,13 @@
       "when": 1788558090901,
       "tag": "0016_rich_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788558286724,
+      "tag": "0017_dark_the_professor",
+      "breakpoints": true
     }
   ]
 }

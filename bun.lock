@@ -19,6 +19,7 @@
       "dependencies": {
         "@ai-series/audio": "workspace:*",
         "@ai-series/comfy": "workspace:*",
+        "@ai-series/composition": "workspace:*",
         "@ai-series/config": "workspace:*",
         "@ai-series/db": "workspace:*",
         "@ai-series/director": "workspace:*",
@@ -93,6 +94,18 @@
     },
     "packages/comfy": {
       "name": "@ai-series/comfy",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-series/db": "workspace:*",
+        "drizzle-orm": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/composition": {
+      "name": "@ai-series/composition",
       "version": "0.0.0",
       "dependencies": {
         "@ai-series/db": "workspace:*",
@@ -370,6 +383,8 @@
     "@ai-series/audio": ["@ai-series/audio@workspace:packages/audio"],
 
     "@ai-series/comfy": ["@ai-series/comfy@workspace:packages/comfy"],
+
+    "@ai-series/composition": ["@ai-series/composition@workspace:packages/composition"],
 
     "@ai-series/config": ["@ai-series/config@workspace:packages/config"],
 
