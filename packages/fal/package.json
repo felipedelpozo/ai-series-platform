@@ -1,0 +1,22 @@
+{
+  "name": "@ai-series/fal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:live:fal": "FAL_LIVE=1 bun test src/live.test.ts"
+  },
+  "dependencies": {
+    "@fal-ai/client": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/bun": "catalog:"
+  }
+}

@@ -12,9 +12,12 @@
   "dependencies": {
     "@ai-series/config": "workspace:*",
     "@ai-series/db": "workspace:*",
+    "@ai-series/fal": "workspace:*",
+    "@ai-series/generation": "workspace:*",
     "@ai-series/prompts": "workspace:*",
     "@ai-series/ui": "workspace:*",
     "dotenv": "catalog:",
+    "drizzle-orm": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "react": "catalog:",

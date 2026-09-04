@@ -4,6 +4,8 @@ export {
   promptTemplates,
   promptVersions,
   promptSnapshots,
+  generations,
+  assets,
 } from "./schema";
 export type { PromptVariable } from "./schema";
 export {

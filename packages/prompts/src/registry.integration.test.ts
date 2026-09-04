@@ -4,8 +4,10 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { join } from "node:path";
 import postgres from "postgres";
 import {
+  assets,
   auditLog,
   ensureDefaultWorkspace,
+  generations,
   promptSnapshots,
   promptTemplates,
   promptVersions,
@@ -24,7 +26,7 @@ import {
 } from "./registry";
 import { seedPrompts } from "./seed";
 
-const TEST_DB = "ai_series_test_prompts";
+const TEST_DB = "ai_series_platform_test_prompts";
 const migrationsFolder = join(import.meta.dirname, "..", "..", "db", "migrations");
 
 function baseUrl(): string {
@@ -55,7 +57,15 @@ describe.skipIf(!hasDb)("prompt registry integration", () => {
 
     sql = postgres(testUrl(), { max: 1 });
     db = drizzle(sql, {
-      schema: { workspace, auditLog, promptTemplates, promptVersions, promptSnapshots },
+      schema: {
+        workspace,
+        auditLog,
+        promptTemplates,
+        promptVersions,
+        promptSnapshots,
+        generations,
+        assets,
+      },
     });
     await migrate(db, { migrationsFolder });
     await ensureDefaultWorkspace(db);
