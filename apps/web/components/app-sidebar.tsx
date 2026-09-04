@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clapperboard, Images, MessageSquareText, Settings, Sparkles } from "lucide-react";
+import { Clapperboard, Gauge, Images, MessageSquareText, Settings, Sparkles } from "lucide-react";
 import { cn, Separator } from "@ai-series/ui";
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { href: "/assets", label: "Assets", icon: Images },
   { href: "/prompts", label: "Prompts", icon: MessageSquareText },
   { href: "/generations", label: "Generations", icon: Sparkles },
+  { href: "/ops", label: "Operations", icon: Gauge },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
