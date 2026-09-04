@@ -405,3 +405,37 @@ export const episodeExports = pgTable("episode_exports", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const interactionWindows = pgTable("interaction_windows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  episodeNumber: integer("episode_number").notNull(),
+  status: text("status").notNull().default("open"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const audienceSignals = pgTable(
+  "audience_signals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id),
+    episodeNumber: integer("episode_number").notNull(),
+    windowId: uuid("window_id"),
+    platform: text("platform").notNull(),
+    sourceId: text("source_id").notNull(),
+    raw: jsonb("raw").$type<Record<string, unknown>>().notNull().default({}),
+    comment: text("comment"),
+    liked: boolean("liked").notNull().default(false),
+    reaction: text("reaction"),
+    replyTo: text("reply_to"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    isSpam: boolean("is_spam").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("audience_signals_platform_source_idx").on(table.platform, table.sourceId)],
+);
