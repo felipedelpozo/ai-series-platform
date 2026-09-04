@@ -4,17 +4,8 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { join } from "node:path";
 import postgres from "postgres";
 import {
-  assets,
-  auditLog,
   ensureDefaultWorkspace,
-  generations,
-  jobAttempts,
-  jobEvents,
-  jobs,
-  promptSnapshots,
-  promptTemplates,
-  promptVersions,
-  workspace,
+  schema,
   type Db,
 } from "@ai-series/db";
 import {
@@ -59,20 +50,7 @@ describe.skipIf(!hasDb)("prompt registry integration", () => {
     await admin.end();
 
     sql = postgres(testUrl(), { max: 1 });
-    db = drizzle(sql, {
-      schema: {
-        workspace,
-        auditLog,
-        promptTemplates,
-        promptVersions,
-        promptSnapshots,
-        generations,
-        assets,
-        jobs,
-        jobAttempts,
-        jobEvents,
-      },
-    });
+    db = drizzle(sql, { schema });
     await migrate(db, { migrationsFolder });
     await ensureDefaultWorkspace(db);
   });

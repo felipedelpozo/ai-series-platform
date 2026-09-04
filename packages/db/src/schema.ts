@@ -162,3 +162,44 @@ export const jobEvents = pgTable("job_events", {
   payload: jsonb("payload").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const series = pgTable("series", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const seriesBibles = pgTable(
+  "series_bibles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id),
+    version: integer("version").notNull(),
+    title: text("title"),
+    premise: text("premise"),
+    genre: text("genre"),
+    tone: text("tone"),
+    audience: text("audience"),
+    format: text("format"),
+    language: text("language"),
+    episodeDuration: text("episode_duration"),
+    narrativeRules: jsonb("narrative_rules").$type<string[]>().notNull().default([]),
+    visualStyle: text("visual_style"),
+    canon: jsonb("canon").$type<string[]>().notNull().default([]),
+    prohibitions: jsonb("prohibitions").$type<string[]>().notNull().default([]),
+    description: text("description"),
+    source: text("source").notNull().default("manual"),
+    promptSnapshotId: uuid("prompt_snapshot_id"),
+    isActive: boolean("is_active").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("series_bibles_series_version_idx").on(table.seriesId, table.version)],
+);

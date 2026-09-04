@@ -10,6 +10,7 @@ export {
   clonePromptTemplate,
   listPromptTemplates,
   getPromptDetail,
+  getActivePrompt,
   savePromptSnapshot,
 } from "./registry";
 export type { CreateTemplateInput, EditTemplateInput, ScopeType } from "./registry";

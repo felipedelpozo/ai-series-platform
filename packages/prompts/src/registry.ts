@@ -181,6 +181,39 @@ export async function listPromptTemplates(
     .orderBy(desc(promptTemplates.createdAt));
 }
 
+export async function getActivePrompt(
+  db: Db,
+  purpose: string,
+): Promise<{
+  templateId: string;
+  versionId: string;
+  template: string;
+  variables: PromptVariable[];
+} | null> {
+  const templates = await db
+    .select()
+    .from(promptTemplates)
+    .where(and(eq(promptTemplates.purpose, purpose), eq(promptTemplates.status, "active")));
+  const template = templates[0];
+  if (!template) {
+    return null;
+  }
+  const versions = await db
+    .select()
+    .from(promptVersions)
+    .where(and(eq(promptVersions.templateId, template.id), eq(promptVersions.isActive, true)));
+  const version = versions[0];
+  if (!version) {
+    return null;
+  }
+  return {
+    templateId: template.id,
+    versionId: version.id,
+    template: version.template,
+    variables: version.variables,
+  };
+}
+
 export async function getPromptDetail(db: Db, templateId: string) {
   const [template] = await db
     .select()
