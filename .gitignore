@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+.turbo/
+apps/web/playwright-report/
+apps/web/test-results/
+.media/
+media/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
