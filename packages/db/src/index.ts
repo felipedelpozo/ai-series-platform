@@ -25,6 +25,8 @@ export {
   qaFindings,
   audioTracks,
   episodeExports,
+  interactionWindows,
+  audienceSignals,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";

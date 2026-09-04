@@ -22,6 +22,7 @@
     "@ai-series/qa": "workspace:*",
     "@ai-series/audio": "workspace:*",
     "@ai-series/composition": "workspace:*",
+    "@ai-series/audience": "workspace:*",
     "@ai-series/fal": "workspace:*",
     "@ai-series/generation": "workspace:*",
     "@ai-series/jobs": "workspace:*",
