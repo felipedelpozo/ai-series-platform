@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-series/config": "workspace:*",
     "@ai-series/accounts": "workspace:*",
+    "@ai-series/ai": "workspace:*",
     "@ai-series/db": "workspace:*",
     "@ai-series/decision": "workspace:*",
     "@ai-series/entities": "workspace:*",
@@ -23,6 +24,7 @@
     "@ai-series/production": "workspace:*",
     "@ai-series/director": "workspace:*",
     "@ai-series/comfy": "workspace:*",
+    "@ai-series/copilot": "workspace:*",
     "@ai-series/qa": "workspace:*",
     "@ai-series/audio": "workspace:*",
     "@ai-series/composition": "workspace:*",
@@ -50,6 +52,7 @@
     "@types/react-dom": "catalog:",
     "@types/node": "catalog:",
     "@types/bun": "catalog:",
+    "postgres": "catalog:",
     "tailwindcss": "catalog:",
     "@tailwindcss/postcss": "catalog:"
   }

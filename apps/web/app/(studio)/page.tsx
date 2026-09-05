@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { CopilotWorkspace } from "@/components/copilot/CopilotWorkspace";
 
 export default function HomePage() {
-  redirect("/series");
+  return <CopilotWorkspace />;
 }

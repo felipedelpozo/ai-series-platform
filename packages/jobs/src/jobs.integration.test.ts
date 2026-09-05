@@ -5,7 +5,13 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { join } from "node:path";
 import postgres from "postgres";
 import { jobs, schema, workspace, type Db } from "@ai-series/db";
-import { enqueueActiveJob, enqueueJob } from "./jobs";
+import {
+  enqueueActiveJob,
+  enqueueJob,
+  PaidJobNotReusableError,
+  reconcilePaidJob,
+  reconcilePaidJobInTransaction,
+} from "./jobs";
 
 const TEST_DB = "ai_series_jobs_test";
 const migrationsFolder = join(import.meta.dirname, "..", "..", "db", "migrations");
@@ -98,5 +104,130 @@ describe.skipIf(!hasDb)("job idempotency integration", () => {
     expect(later.id).not.toBe(first.id);
     expect(later.created).toBe(true);
     expect(rows).toHaveLength(2);
+  });
+
+  it("reconciles concurrent paid starts and reuses a completed durable result", async () => {
+    const [workspaceRow] = await db
+      .insert(workspace)
+      .values({ slug: "paid-jobs-test", name: "Paid Jobs Test" })
+      .returning({ id: workspace.id });
+    const input = {
+      workspaceId: workspaceRow!.id,
+      kind: "video",
+      input: { proposalRevisionId: "revision", confirmationId: "confirmation" },
+      model: "provider-model",
+    };
+
+    const starts = await Promise.all(
+      Array.from({ length: 10 }, () => reconcilePaidJob(db, input, "approved-scope")),
+    );
+    expect(new Set(starts.map((start) => start.id)).size).toBe(1);
+    expect(starts.filter((start) => start.created)).toHaveLength(1);
+
+    const jobId = starts[0]!.id;
+    await db.update(jobs).set({ status: "running" }).where(eq(jobs.id, jobId));
+    expect(await reconcilePaidJob(db, input, "approved-scope")).toEqual({
+      id: jobId,
+      created: false,
+      status: "running",
+    });
+
+    await db
+      .update(jobs)
+      .set({ status: "succeeded", output: { assetId: "canonical-asset" } })
+      .where(eq(jobs.id, jobId));
+
+    expect(await reconcilePaidJob(db, input, "approved-scope")).toEqual({
+      id: jobId,
+      created: false,
+      status: "succeeded",
+    });
+  });
+
+  it("isolates equal paid scopes by workspace", async () => {
+    const created = await db
+      .insert(workspace)
+      .values([
+        { slug: "paid-scope-a", name: "Paid Scope A" },
+        { slug: "paid-scope-b", name: "Paid Scope B" },
+      ])
+      .returning({ id: workspace.id });
+    const base = { kind: "image", input: { confirmationId: "same" } };
+
+    const [left, right] = await Promise.all([
+      reconcilePaidJob(db, { ...base, workspaceId: created[0]!.id }, "same-scope"),
+      reconcilePaidJob(db, { ...base, workspaceId: created[1]!.id }, "same-scope"),
+    ]);
+
+    expect(left.id).not.toBe(right.id);
+    expect(left.created).toBe(true);
+    expect(right.created).toBe(true);
+  });
+
+  it("does not reuse failed or incomplete succeeded paid jobs", async () => {
+    const [workspaceRow] = await db
+      .insert(workspace)
+      .values({ slug: "paid-terminal-test", name: "Paid Terminal Test" })
+      .returning({ id: workspace.id });
+    const input = { workspaceId: workspaceRow!.id, kind: "image", input: {} };
+    const first = await reconcilePaidJob(db, input, "failed-scope");
+    await db.update(jobs).set({ status: "failed" }).where(eq(jobs.id, first.id));
+
+    await expect(reconcilePaidJob(db, input, "failed-scope")).rejects.toBeInstanceOf(
+      PaidJobNotReusableError,
+    );
+
+    const second = await reconcilePaidJob(db, input, "incomplete-scope");
+    await db.update(jobs).set({ status: "succeeded", output: null }).where(eq(jobs.id, second.id));
+    await expect(reconcilePaidJob(db, input, "incomplete-scope")).rejects.toBeInstanceOf(
+      PaidJobNotReusableError,
+    );
+  });
+
+  it("rolls job creation back with a caller transaction", async () => {
+    const [workspaceRow] = await db
+      .insert(workspace)
+      .values({ slug: "paid-rollback-test", name: "Paid Rollback Test" })
+      .returning({ id: workspace.id });
+
+    await expect(
+      db.transaction(async (tx) => {
+        await reconcilePaidJobInTransaction(
+          tx,
+          { workspaceId: workspaceRow!.id, kind: "image", input: {} },
+          "rolled-back-scope",
+        );
+        throw new Error("abort operation");
+      }),
+    ).rejects.toThrow("abort operation");
+
+    const rows = await db.select().from(jobs).where(eq(jobs.workspaceId, workspaceRow!.id));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("does not reveal a colliding global key from another workspace", async () => {
+    const created = await db
+      .insert(workspace)
+      .values([
+        { slug: "global-key-a", name: "Global Key A" },
+        { slug: "global-key-b", name: "Global Key B" },
+      ])
+      .returning({ id: workspace.id });
+    const first = await enqueueJob(db, {
+      workspaceId: created[0]!.id,
+      idempotencyKey: "legacy-global-collision",
+      kind: "image",
+      input: {},
+    });
+
+    await expect(
+      enqueueJob(db, {
+        workspaceId: created[1]!.id,
+        idempotencyKey: "legacy-global-collision",
+        kind: "image",
+        input: {},
+      }),
+    ).rejects.toThrow("Idempotent job could not be resolved");
+    expect(first.created).toBe(true);
   });
 });

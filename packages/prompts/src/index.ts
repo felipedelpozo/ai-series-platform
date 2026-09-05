@@ -11,6 +11,7 @@ export {
   listPromptTemplates,
   getPromptDetail,
   getActivePrompt,
+  getActivePromptForWorkspace,
   savePromptSnapshot,
 } from "./registry";
 export type { CreateTemplateInput, EditTemplateInput, ScopeType } from "./registry";

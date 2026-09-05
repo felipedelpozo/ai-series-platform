@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { episodePlans, promptSnapshots, type Db } from "@ai-series/db";
+import { episodePlans, promptSnapshots, series, type Db } from "@ai-series/db";
 import { generateStructured } from "@ai-series/ai";
 import { getActivePrompt, renderTemplate } from "@ai-series/prompts";
 import { getSeriesDetail } from "@ai-series/series";
@@ -23,6 +23,66 @@ export const EpisodePlanSchema = z.object({
 });
 export type EpisodePlan = z.infer<typeof EpisodePlanSchema>;
 
+export type EpisodePlanRevision = { id: string; version: number };
+
+export type EpisodePlanRevisionInput = {
+  workspaceId: string;
+  seriesId: string;
+  episodeNumber: number;
+  data: EpisodePlan;
+  source?: string;
+  promptSnapshotId?: string | null;
+  status?: string;
+};
+
+export async function appendEpisodePlanRevisionInWorkspace(
+  db: Db,
+  input: EpisodePlanRevisionInput,
+): Promise<EpisodePlanRevision> {
+  const data = EpisodePlanSchema.parse(input.data);
+  const episodeNumber = z.number().int().min(1).parse(input.episodeNumber);
+  const [owner] = await db
+    .select({ id: series.id })
+    .from(series)
+    .where(and(eq(series.id, input.seriesId), eq(series.workspaceId, input.workspaceId)))
+    .limit(1)
+    .for("update");
+  if (!owner) throw new Error("Series not found");
+
+  const existing = await db
+    .select({ version: episodePlans.version })
+    .from(episodePlans)
+    .where(
+      and(eq(episodePlans.seriesId, input.seriesId), eq(episodePlans.episodeNumber, episodeNumber)),
+    );
+  const next = Math.max(0, ...existing.map((value) => value.version)) + 1;
+  await db
+    .update(episodePlans)
+    .set({ isActive: false })
+    .where(
+      and(
+        eq(episodePlans.seriesId, input.seriesId),
+        eq(episodePlans.episodeNumber, episodeNumber),
+        eq(episodePlans.isActive, true),
+      ),
+    );
+  const [created] = await db
+    .insert(episodePlans)
+    .values({
+      seriesId: input.seriesId,
+      episodeNumber,
+      version: next,
+      data,
+      status: input.status ?? "draft",
+      source: input.source ?? "manual",
+      promptSnapshotId: input.promptSnapshotId ?? null,
+      isActive: true,
+    })
+    .returning({ id: episodePlans.id });
+  if (!created) throw new Error("Episode plan revision could not be created");
+  return { id: created.id, version: next };
+}
+
 async function createPlanVersion(
   db: Db,
   seriesId: string,
@@ -31,31 +91,23 @@ async function createPlanVersion(
   source: "manual" | "generated",
   promptSnapshotId: string | null,
 ): Promise<string> {
-  return db.transaction(async (tx) => {
-    const existing = await tx
-      .select({ version: episodePlans.version })
-      .from(episodePlans)
-      .where(and(eq(episodePlans.seriesId, seriesId), eq(episodePlans.episodeNumber, episodeNumber)));
-    const next = Math.max(0, ...existing.map((v) => v.version)) + 1;
-    await tx
-      .update(episodePlans)
-      .set({ isActive: false })
-      .where(and(eq(episodePlans.seriesId, seriesId), eq(episodePlans.episodeNumber, episodeNumber)));
-    const [created] = await tx
-      .insert(episodePlans)
-      .values({
-        seriesId,
-        episodeNumber,
-        version: next,
-        data,
-        status: "draft",
-        source,
-        promptSnapshotId,
-        isActive: true,
-      })
-      .returning({ id: episodePlans.id });
-    return created.id;
-  });
+  const [owner] = await db
+    .select({ workspaceId: series.workspaceId })
+    .from(series)
+    .where(eq(series.id, seriesId))
+    .limit(1);
+  if (!owner) throw new Error("Series not found");
+  const created = await db.transaction((tx) =>
+    appendEpisodePlanRevisionInWorkspace(tx, {
+      workspaceId: owner.workspaceId,
+      seriesId,
+      episodeNumber,
+      data,
+      source,
+      promptSnapshotId,
+    }),
+  );
+  return created.id;
 }
 
 export async function generateEpisodePlan(
@@ -92,7 +144,14 @@ export async function generateEpisodePlan(
     })
     .returning({ id: promptSnapshots.id });
 
-  return createPlanVersion(db, input.seriesId, input.episodeNumber, object, "generated", snapshot.id);
+  return createPlanVersion(
+    db,
+    input.seriesId,
+    input.episodeNumber,
+    object,
+    "generated",
+    snapshot.id,
+  );
 }
 
 export async function editEpisodePlan(db: Db, planId: string, data: EpisodePlan): Promise<string> {

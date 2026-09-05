@@ -8,6 +8,7 @@ import { getStudioRoute, studioNavigation } from "./studio-navigation";
 describe("studio navigation contract", () => {
   test("preserves every existing shell destination exactly once", () => {
     expect(studioNavigation.map(({ href }) => href)).toEqual([
+      "/",
       "/series",
       "/assets",
       "/prompts",
@@ -20,6 +21,7 @@ describe("studio navigation contract", () => {
   });
 
   test("maps static and episode routes to useful context", () => {
+    expect(getStudioRoute("/").label).toBe("Creative copilot");
     expect(getStudioRoute("/assets").label).toBe("Asset library");
     expect(getStudioRoute("/prompts/template-1").label).toBe("Prompt registry");
     expect(getStudioRoute("/studio/plan-1").label).toBe("Episode studio");

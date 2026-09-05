@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import {
   promptSnapshots,
   promptTemplates,
@@ -114,10 +114,7 @@ export async function editPromptTemplate(
 }
 
 export async function activatePromptVersion(db: Db, versionId: string): Promise<void> {
-  const [version] = await db
-    .select()
-    .from(promptVersions)
-    .where(eq(promptVersions.id, versionId));
+  const [version] = await db.select().from(promptVersions).where(eq(promptVersions.id, versionId));
   if (!version) {
     throw new Error("Version not found");
   }
@@ -126,10 +123,7 @@ export async function activatePromptVersion(db: Db, versionId: string): Promise<
       .update(promptVersions)
       .set({ isActive: false })
       .where(eq(promptVersions.templateId, version.templateId));
-    await tx
-      .update(promptVersions)
-      .set({ isActive: true })
-      .where(eq(promptVersions.id, versionId));
+    await tx.update(promptVersions).set({ isActive: true }).where(eq(promptVersions.id, versionId));
   });
 }
 
@@ -140,10 +134,7 @@ export async function archivePromptTemplate(db: Db, templateId: string): Promise
     .where(eq(promptTemplates.id, templateId));
 }
 
-export async function clonePromptTemplate(
-  db: Db,
-  templateId: string,
-): Promise<{ id: string }> {
+export async function clonePromptTemplate(db: Db, templateId: string): Promise<{ id: string }> {
   const [template] = await db
     .select()
     .from(promptTemplates)
@@ -184,16 +175,37 @@ export async function listPromptTemplates(
 export async function getActivePrompt(
   db: Db,
   purpose: string,
+  options?: {
+    workspaceId?: string;
+    scopeType?: ScopeType;
+    scopeId?: string | null;
+  },
 ): Promise<{
   templateId: string;
   versionId: string;
+  version: number;
   template: string;
   variables: PromptVariable[];
+  outputContract: Record<string, unknown> | null;
 } | null> {
+  const conditions = [eq(promptTemplates.purpose, purpose), eq(promptTemplates.status, "active")];
+  if (options?.workspaceId) {
+    conditions.push(eq(promptTemplates.workspaceId, options.workspaceId));
+  }
+  if (options?.scopeType) {
+    conditions.push(eq(promptTemplates.scopeType, options.scopeType));
+  }
+  const scopeId = options?.scopeId;
+  if (scopeId === null) {
+    conditions.push(isNull(promptTemplates.scopeId));
+  } else if (scopeId !== undefined) {
+    conditions.push(eq(promptTemplates.scopeId, scopeId));
+  }
   const templates = await db
     .select()
     .from(promptTemplates)
-    .where(and(eq(promptTemplates.purpose, purpose), eq(promptTemplates.status, "active")));
+    .where(and(...conditions))
+    .orderBy(desc(promptTemplates.updatedAt));
   const template = templates[0];
   if (!template) {
     return null;
@@ -209,9 +221,31 @@ export async function getActivePrompt(
   return {
     templateId: template.id,
     versionId: version.id,
+    version: version.version,
     template: version.template,
     variables: version.variables,
+    outputContract: version.outputContract,
   };
+}
+
+/**
+ * Tenant-explicit prompt resolution for request paths. Callers handling user
+ * traffic should prefer this helper over the backwards-compatible resolver.
+ */
+export function getActivePromptForWorkspace(
+  db: Db,
+  input: {
+    workspaceId: string;
+    purpose: string;
+    scopeType?: ScopeType;
+    scopeId?: string | null;
+  },
+) {
+  return getActivePrompt(db, input.purpose, {
+    workspaceId: input.workspaceId,
+    scopeType: input.scopeType,
+    ...(input.scopeId !== undefined ? { scopeId: input.scopeId } : {}),
+  });
 }
 
 export async function getPromptDetail(db: Db, templateId: string) {
@@ -246,7 +280,11 @@ export async function savePromptSnapshot(
   if (!version) {
     throw new Error("Version not found");
   }
-  const { rendered, missing } = renderTemplate(version.template, input.variables, version.variables);
+  const { rendered, missing } = renderTemplate(
+    version.template,
+    input.variables,
+    version.variables,
+  );
   if (missing.length > 0) {
     throw new Error(`Missing required variables: ${missing.join(", ")}`);
   }

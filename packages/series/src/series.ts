@@ -1,12 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import {
-  promptSnapshots,
-  series,
-  seriesBibles,
-  workspace,
-  type Db,
-} from "@ai-series/db";
+import { promptSnapshots, series, seriesBibles, workspace, type Db } from "@ai-series/db";
 import { generateStructured } from "@ai-series/ai";
 import { getActivePrompt, renderTemplate } from "@ai-series/prompts";
 
@@ -29,6 +23,13 @@ export type BibleInput = z.infer<typeof BibleSchema>;
 
 export type CreateSeriesInput = { name: string; slug?: string };
 
+export type BibleRevisionInput = BibleInput & {
+  source?: string;
+  promptSnapshotId?: string | null;
+};
+
+export type CanonicalRevision = { id: string; version: number };
+
 function slugify(name: string): string {
   return name
     .toLowerCase()
@@ -48,13 +49,53 @@ async function resolveWorkspaceId(db: Db): Promise<string> {
   return row.id;
 }
 
-export async function createSeries(db: Db, input: CreateSeriesInput) {
-  const workspaceId = await resolveWorkspaceId(db);
+export async function createSeriesInWorkspace(
+  db: Db,
+  input: CreateSeriesInput & { workspaceId: string },
+): Promise<string> {
+  const name = z.string().trim().min(1).parse(input.name);
+  const slug = z
+    .string()
+    .trim()
+    .min(1)
+    .max(80)
+    .parse(input.slug ?? slugify(name));
   const [created] = await db
     .insert(series)
-    .values({ workspaceId, name: input.name, slug: input.slug ?? slugify(input.name) })
+    .values({ workspaceId: input.workspaceId, name, slug })
     .returning({ id: series.id });
+  if (!created) throw new Error("Series could not be created");
   return created.id;
+}
+
+export async function createSeries(db: Db, input: CreateSeriesInput) {
+  const workspaceId = await resolveWorkspaceId(db);
+  return createSeriesInWorkspace(db, { ...input, workspaceId });
+}
+
+export async function renameSeriesInWorkspace(
+  db: Db,
+  input: { workspaceId: string; seriesId: string; name: string },
+): Promise<void> {
+  const name = z.string().trim().min(1).parse(input.name);
+  const [updated] = await db
+    .update(series)
+    .set({ name, updatedAt: new Date() })
+    .where(and(eq(series.id, input.seriesId), eq(series.workspaceId, input.workspaceId)))
+    .returning({ id: series.id });
+  if (!updated) throw new Error("Series not found");
+}
+
+export async function archiveSeriesInWorkspace(
+  db: Db,
+  input: { workspaceId: string; seriesId: string },
+): Promise<void> {
+  const [updated] = await db
+    .update(series)
+    .set({ status: "archived", updatedAt: new Date() })
+    .where(and(eq(series.id, input.seriesId), eq(series.workspaceId, input.workspaceId)))
+    .returning({ id: series.id });
+  if (!updated) throw new Error("Series not found");
 }
 
 export async function renameSeries(db: Db, id: string, name: string): Promise<void> {
@@ -62,7 +103,10 @@ export async function renameSeries(db: Db, id: string, name: string): Promise<vo
 }
 
 export async function archiveSeries(db: Db, id: string): Promise<void> {
-  await db.update(series).set({ status: "archived", updatedAt: new Date() }).where(eq(series.id, id));
+  await db
+    .update(series)
+    .set({ status: "archived", updatedAt: new Date() })
+    .where(eq(series.id, id));
 }
 
 export async function duplicateSeries(db: Db, id: string): Promise<string> {
@@ -101,43 +145,71 @@ export async function getSeriesDetail(db: Db, id: string) {
 export async function createBibleRevision(
   db: Db,
   seriesId: string,
-  input: BibleInput & { source?: string; promptSnapshotId?: string | null },
+  input: BibleRevisionInput,
 ): Promise<string> {
-  return db.transaction(async (tx) => {
-    const existing = await tx
-      .select({ version: seriesBibles.version })
-      .from(seriesBibles)
-      .where(eq(seriesBibles.seriesId, seriesId));
-    const next = Math.max(0, ...existing.map((v) => v.version)) + 1;
-    await tx
-      .update(seriesBibles)
-      .set({ isActive: false })
-      .where(and(eq(seriesBibles.seriesId, seriesId), eq(seriesBibles.isActive, true)));
-    const [created] = await tx
-      .insert(seriesBibles)
-      .values({
-        seriesId,
-        version: next,
-        title: input.title,
-        premise: input.premise,
-        genre: input.genre,
-        tone: input.tone,
-        audience: input.audience,
-        format: input.format,
-        language: input.language,
-        episodeDuration: input.episodeDuration,
-        narrativeRules: input.narrativeRules,
-        visualStyle: input.visualStyle,
-        canon: input.canon,
-        prohibitions: input.prohibitions,
-        description: input.description,
-        source: input.source ?? "manual",
-        promptSnapshotId: input.promptSnapshotId ?? null,
-        isActive: true,
-      })
-      .returning({ id: seriesBibles.id });
-    return created.id;
-  });
+  const [owner] = await db
+    .select({ workspaceId: series.workspaceId })
+    .from(series)
+    .where(eq(series.id, seriesId))
+    .limit(1);
+  if (!owner) throw new Error("Series not found");
+  const created = await db.transaction((tx) =>
+    appendBibleRevisionInWorkspace(tx, {
+      workspaceId: owner.workspaceId,
+      seriesId,
+      bible: input,
+    }),
+  );
+  return created.id;
+}
+
+export async function appendBibleRevisionInWorkspace(
+  db: Db,
+  input: { workspaceId: string; seriesId: string; bible: BibleRevisionInput },
+): Promise<CanonicalRevision> {
+  const bible = BibleSchema.parse(input.bible);
+  const [owner] = await db
+    .select({ id: series.id })
+    .from(series)
+    .where(and(eq(series.id, input.seriesId), eq(series.workspaceId, input.workspaceId)))
+    .limit(1)
+    .for("update");
+  if (!owner) throw new Error("Series not found");
+
+  const existing = await db
+    .select({ version: seriesBibles.version })
+    .from(seriesBibles)
+    .where(eq(seriesBibles.seriesId, input.seriesId));
+  const next = Math.max(0, ...existing.map((value) => value.version)) + 1;
+  await db
+    .update(seriesBibles)
+    .set({ isActive: false })
+    .where(and(eq(seriesBibles.seriesId, input.seriesId), eq(seriesBibles.isActive, true)));
+  const [created] = await db
+    .insert(seriesBibles)
+    .values({
+      seriesId: input.seriesId,
+      version: next,
+      title: bible.title,
+      premise: bible.premise,
+      genre: bible.genre,
+      tone: bible.tone,
+      audience: bible.audience,
+      format: bible.format,
+      language: bible.language,
+      episodeDuration: bible.episodeDuration,
+      narrativeRules: bible.narrativeRules,
+      visualStyle: bible.visualStyle,
+      canon: bible.canon,
+      prohibitions: bible.prohibitions,
+      description: bible.description,
+      source: input.bible.source ?? "manual",
+      promptSnapshotId: input.bible.promptSnapshotId ?? null,
+      isActive: true,
+    })
+    .returning({ id: seriesBibles.id });
+  if (!created) throw new Error("Bible revision could not be created");
+  return { id: created.id, version: next };
 }
 
 export async function activateBibleRevision(db: Db, bibleId: string): Promise<void> {

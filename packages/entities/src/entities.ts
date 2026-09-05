@@ -12,6 +12,13 @@ import { generateStructured } from "@ai-series/ai";
 import { getActivePrompt, renderTemplate } from "@ai-series/prompts";
 
 export type EntityType = "character" | "location" | "prop";
+export const EntityTypeSchema = z.enum(["character", "location", "prop"]);
+
+export type EntityRevisionResult = {
+  entityId: string;
+  versionId: string;
+  version: number;
+};
 
 export const CharacterSchema = z.object({
   role: z.string(),
@@ -59,18 +66,58 @@ export async function createEntity(
   db: Db,
   input: { seriesId: string; type: EntityType; name: string; data: Record<string, unknown> },
 ): Promise<string> {
+  const [owner] = await db
+    .select({ workspaceId: series.workspaceId })
+    .from(series)
+    .where(eq(series.id, input.seriesId))
+    .limit(1);
+  if (!owner) throw new Error("Series not found");
+  const created = await db.transaction((tx) =>
+    createEntityInWorkspace(tx, { ...input, workspaceId: owner.workspaceId }),
+  );
+  return created.entityId;
+}
+
+export async function createEntityInWorkspace(
+  db: Db,
+  input: {
+    workspaceId: string;
+    seriesId: string;
+    type: EntityType;
+    name: string;
+    data: Record<string, unknown>;
+    source?: string;
+    promptSnapshotId?: string | null;
+  },
+): Promise<EntityRevisionResult> {
+  const name = z.string().trim().min(1).parse(input.name);
+  const data = dataSchema(input.type).parse(input.data) as Record<string, unknown>;
+  const [owner] = await db
+    .select({ id: series.id })
+    .from(series)
+    .where(and(eq(series.id, input.seriesId), eq(series.workspaceId, input.workspaceId)))
+    .limit(1)
+    .for("update");
+  if (!owner) throw new Error("Series not found");
   const [created] = await db
     .insert(entities)
-    .values({ seriesId: input.seriesId, type: input.type, name: input.name })
+    .values({ seriesId: input.seriesId, type: input.type, name })
     .returning({ id: entities.id });
-  await db.insert(entityVersions).values({
-    entityId: created.id,
-    version: 1,
-    name: input.name,
-    data: input.data,
-    isActive: true,
-  });
-  return created.id;
+  if (!created) throw new Error("Entity could not be created");
+  const [version] = await db
+    .insert(entityVersions)
+    .values({
+      entityId: created.id,
+      version: 1,
+      name,
+      data,
+      isActive: true,
+      source: input.source ?? "manual",
+      promptSnapshotId: input.promptSnapshotId ?? null,
+    })
+    .returning({ id: entityVersions.id });
+  if (!version) throw new Error("Entity version could not be created");
+  return { entityId: created.id, versionId: version.id, version: 1 };
 }
 
 export async function editEntity(
@@ -78,36 +125,107 @@ export async function editEntity(
   entityId: string,
   input: { name?: string; data?: Record<string, unknown> },
 ): Promise<string> {
-  return db.transaction(async (tx) => {
-    const [entity] = await tx.select().from(entities).where(eq(entities.id, entityId));
-    if (!entity) throw new Error("Entity not found");
-    const versions = await tx
-      .select({ version: entityVersions.version })
-      .from(entityVersions)
-      .where(eq(entityVersions.entityId, entityId));
-    const next = Math.max(0, ...versions.map((v) => v.version)) + 1;
-    await tx
-      .update(entityVersions)
-      .set({ isActive: false })
-      .where(and(eq(entityVersions.entityId, entityId), eq(entityVersions.isActive, true)));
-    const [active] = await tx
-      .select()
-      .from(entityVersions)
-      .where(eq(entityVersions.entityId, entityId))
-      .orderBy(desc(entityVersions.version))
-      .limit(1);
-    const [created] = await tx
-      .insert(entityVersions)
-      .values({
-        entityId,
-        version: next,
-        name: input.name ?? entity.name,
-        data: input.data ?? active?.data ?? {},
-        isActive: true,
-      })
-      .returning({ id: entityVersions.id });
-    return created.id;
-  });
+  const [owner] = await db
+    .select({ workspaceId: series.workspaceId })
+    .from(entities)
+    .innerJoin(series, eq(entities.seriesId, series.id))
+    .where(eq(entities.id, entityId))
+    .limit(1);
+  if (!owner) throw new Error("Entity not found");
+  const created = await db.transaction((tx) =>
+    appendEntityRevisionInWorkspace(tx, {
+      workspaceId: owner.workspaceId,
+      entityId,
+      ...input,
+    }),
+  );
+  return created.versionId;
+}
+
+export async function appendEntityRevisionInWorkspace(
+  db: Db,
+  input: {
+    workspaceId: string;
+    entityId: string;
+    name?: string;
+    data?: Record<string, unknown>;
+    source?: string;
+    promptSnapshotId?: string | null;
+  },
+): Promise<EntityRevisionResult> {
+  const [owned] = await db
+    .select({
+      id: entities.id,
+      name: entities.name,
+      type: entities.type,
+      status: entities.status,
+    })
+    .from(entities)
+    .innerJoin(series, eq(entities.seriesId, series.id))
+    .where(and(eq(entities.id, input.entityId), eq(series.workspaceId, input.workspaceId)))
+    .limit(1)
+    .for("update");
+  if (!owned) throw new Error("Entity not found");
+  if (owned.status === "archived") throw new Error("Entity is archived");
+
+  const [active] = await db
+    .select()
+    .from(entityVersions)
+    .where(and(eq(entityVersions.entityId, input.entityId), eq(entityVersions.isActive, true)))
+    .limit(1);
+  if (!active) throw new Error("Active entity version not found");
+  const name = z
+    .string()
+    .trim()
+    .min(1)
+    .parse(input.name ?? active.name);
+  const type = EntityTypeSchema.parse(owned.type);
+  const data = dataSchema(type).parse(input.data ?? active.data) as Record<string, unknown>;
+  const versions = await db
+    .select({ version: entityVersions.version })
+    .from(entityVersions)
+    .where(eq(entityVersions.entityId, input.entityId));
+  const next = Math.max(0, ...versions.map((value) => value.version)) + 1;
+  await db
+    .update(entityVersions)
+    .set({ isActive: false })
+    .where(and(eq(entityVersions.entityId, input.entityId), eq(entityVersions.isActive, true)));
+  await db
+    .update(entities)
+    .set({ name, updatedAt: new Date() })
+    .where(eq(entities.id, input.entityId));
+  const [created] = await db
+    .insert(entityVersions)
+    .values({
+      entityId: input.entityId,
+      version: next,
+      name,
+      data,
+      isActive: true,
+      source: input.source ?? "manual",
+      promptSnapshotId: input.promptSnapshotId ?? null,
+    })
+    .returning({ id: entityVersions.id });
+  if (!created) throw new Error("Entity revision could not be created");
+  return { entityId: input.entityId, versionId: created.id, version: next };
+}
+
+export async function archiveEntityInWorkspace(
+  db: Db,
+  input: { workspaceId: string; entityId: string },
+): Promise<void> {
+  const [owned] = await db
+    .select({ id: entities.id })
+    .from(entities)
+    .innerJoin(series, eq(entities.seriesId, series.id))
+    .where(and(eq(entities.id, input.entityId), eq(series.workspaceId, input.workspaceId)))
+    .limit(1)
+    .for("update");
+  if (!owned) throw new Error("Entity not found");
+  await db
+    .update(entities)
+    .set({ status: "archived", updatedAt: new Date() })
+    .where(eq(entities.id, input.entityId));
 }
 
 export async function activateEntityVersion(db: Db, versionId: string): Promise<void> {
@@ -142,7 +260,9 @@ export async function getEntityDetail(db: Db, entityId: string) {
   const references = await db
     .select()
     .from(referenceAssets)
-    .where(and(eq(referenceAssets.entityId, entityId), eq(referenceAssets.entityType, entity.type)));
+    .where(
+      and(eq(referenceAssets.entityId, entityId), eq(referenceAssets.entityType, entity.type)),
+    );
   return { entity, versions, references };
 }
 
@@ -167,17 +287,18 @@ export async function generateEntityProposal(db: Db, entityId: string): Promise<
   if (!entity) throw new Error("Entity not found");
   const [s] = await db.select().from(series).where(eq(series.id, entity.seriesId));
 
-  const purpose = PROMPT_PURPOSE[entity.type as EntityType];
+  const type = EntityTypeSchema.parse(entity.type);
+  const purpose = PROMPT_PURPOSE[type];
   const active = await getActivePrompt(db, purpose);
   if (!active) throw new Error(`No active ${purpose} prompt`);
   const variables = { series_name: s?.name ?? "", entity_name: entity.name };
   const { rendered, missing } = renderTemplate(active.template, variables, active.variables);
   if (missing.length > 0) throw new Error(`Missing prompt variables: ${missing.join(", ")}`);
 
-  const object = await generateStructured({
+  const object = (await generateStructured({
     prompt: rendered,
-    schema: dataSchema(entity.type as EntityType),
-  }) as Record<string, unknown>;
+    schema: dataSchema(type),
+  })) as Record<string, unknown>;
 
   const [snapshot] = await db
     .insert(promptSnapshots)

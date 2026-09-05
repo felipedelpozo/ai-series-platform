@@ -23,6 +23,7 @@ import {
 import { studioNavigation } from "@/lib/studio-navigation";
 
 const icons = {
+  "/": Sparkles,
   "/series": Clapperboard,
   "/assets": Images,
   "/prompts": MessageSquareText,
@@ -33,7 +34,7 @@ const icons = {
 } as const;
 
 function isActive(pathname: string, href: string) {
-  return href === "/series" ? pathname === href : pathname.startsWith(href);
+  return href === "/" || href === "/series" ? pathname === href : pathname.startsWith(href);
 }
 
 export function AppSidebar({

@@ -13,8 +13,10 @@ import {
 } from "@ai-series/db";
 import { DEFAULT_IMAGE_MODEL, imageResult, imageStatus, submitImage } from "@ai-series/fal";
 import { renderTemplate } from "@ai-series/prompts";
+import { InvalidGenerationJobInputError } from "./job-input";
 
 export type StartImageInput = {
+  workspaceId: string;
   templateId?: string;
   versionId?: string;
   variables: Record<string, string>;
@@ -35,23 +37,34 @@ export async function resolveWorkspaceId(db: Db): Promise<string> {
 
 export async function resolveActiveVersion(
   db: Db,
-  opts: { templateId?: string; versionId?: string },
+  opts: { workspaceId: string; templateId?: string; versionId?: string },
 ) {
   if (opts.versionId) {
     const [version] = await db
-      .select()
+      .select({ version: promptVersions })
       .from(promptVersions)
-      .where(eq(promptVersions.id, opts.versionId));
-    return version;
+      .innerJoin(promptTemplates, eq(promptTemplates.id, promptVersions.templateId))
+      .where(
+        and(
+          eq(promptVersions.id, opts.versionId),
+          eq(promptTemplates.workspaceId, opts.workspaceId),
+        ),
+      );
+    return version?.version;
   }
   if (opts.templateId) {
     const versions = await db
-      .select()
+      .select({ version: promptVersions })
       .from(promptVersions)
+      .innerJoin(promptTemplates, eq(promptTemplates.id, promptVersions.templateId))
       .where(
-        and(eq(promptVersions.templateId, opts.templateId), eq(promptVersions.isActive, true)),
+        and(
+          eq(promptVersions.templateId, opts.templateId),
+          eq(promptVersions.isActive, true),
+          eq(promptTemplates.workspaceId, opts.workspaceId),
+        ),
       );
-    return versions[0];
+    return versions[0]?.version;
   }
   return undefined;
 }
@@ -109,20 +122,35 @@ export async function startImageGeneration(
   db: Db,
   input: StartImageInput,
 ): Promise<{ id: string; requestId: string }> {
-  const workspaceId = await resolveWorkspaceId(db);
   const version = await resolveActiveVersion(db, input);
   if (!version) {
-    throw new Error("No prompt version found; provide templateId or versionId");
+    throw new InvalidGenerationJobInputError(
+      "No prompt version found; provide templateId or versionId",
+    );
   }
 
   const [template] = await db
     .select()
     .from(promptTemplates)
-    .where(eq(promptTemplates.id, version.templateId));
+    .where(
+      and(
+        eq(promptTemplates.id, version.templateId),
+        eq(promptTemplates.workspaceId, input.workspaceId),
+      ),
+    );
+  if (!template) {
+    throw new InvalidGenerationJobInputError(
+      "No prompt version found; provide templateId or versionId",
+    );
+  }
 
-  const { rendered, missing } = renderTemplate(version.template, input.variables, version.variables);
+  const { rendered, missing } = renderTemplate(
+    version.template,
+    input.variables,
+    version.variables,
+  );
   if (missing.length > 0) {
-    throw new Error(`Missing required variables: ${missing.join(", ")}`);
+    throw new InvalidGenerationJobInputError(`Missing required variables: ${missing.join(", ")}`);
   }
 
   const model = input.model ?? DEFAULT_IMAGE_MODEL;
@@ -150,7 +178,7 @@ export async function startImageGeneration(
   const [generation] = await db
     .insert(generations)
     .values({
-      workspaceId,
+      workspaceId: input.workspaceId,
       purpose: template.purpose,
       templateId: template.id,
       versionId: version.id,
@@ -167,8 +195,11 @@ export async function startImageGeneration(
   return { id: generation.id, requestId };
 }
 
-export async function pollImageGeneration(db: Db, id: string) {
-  const [generation] = await db.select().from(generations).where(eq(generations.id, id));
+export async function pollImageGeneration(db: Db, workspaceId: string, id: string) {
+  const [generation] = await db
+    .select()
+    .from(generations)
+    .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
   if (!generation) {
     throw new Error("Generation not found");
   }
@@ -182,12 +213,12 @@ export async function pollImageGeneration(db: Db, id: string) {
       await db
         .update(generations)
         .set({ status: "queued", updatedAt: new Date() })
-        .where(eq(generations.id, id));
+        .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
     } else if (status.status === "IN_PROGRESS") {
       await db
         .update(generations)
         .set({ status: "running", updatedAt: new Date() })
-        .where(eq(generations.id, id));
+        .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
     } else {
       const result = await imageResult(generation.model, generation.requestId!);
       const image = result.images[0];
@@ -207,7 +238,7 @@ export async function pollImageGeneration(db: Db, id: string) {
       await db
         .update(generations)
         .set({ status: "succeeded", updatedAt: new Date() })
-        .where(eq(generations.id, id));
+        .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
     }
   } catch (error) {
     await db
@@ -217,9 +248,15 @@ export async function pollImageGeneration(db: Db, id: string) {
         error: error instanceof Error ? error.message : "unknown generation error",
         updatedAt: new Date(),
       })
-      .where(eq(generations.id, id));
+      .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
   }
 
-  const [updated] = await db.select().from(generations).where(eq(generations.id, id));
-  return updated!;
+  const [updated] = await db
+    .select()
+    .from(generations)
+    .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
+  if (!updated) {
+    throw new Error("Generation not found");
+  }
+  return updated;
 }

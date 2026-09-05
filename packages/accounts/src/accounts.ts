@@ -1,5 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   invitations,
   sessions,
@@ -43,6 +43,26 @@ function normalizeEmail(email: string): string {
 }
 
 export type PublicUser = { id: string; email: string; name: string | null };
+
+export type AccountTransaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
+
+export class InvalidCreditAmountError extends Error {
+  constructor() {
+    super("Credit amount must be a positive integer");
+    this.name = "InvalidCreditAmountError";
+  }
+}
+
+export class WorkspaceQuotaExceededError extends Error {
+  constructor(
+    public readonly requested: number,
+    public readonly creditsUsed: number,
+    public readonly monthlyLimit: number,
+  ) {
+    super(`Quota exceeded: ${creditsUsed + requested}/${monthlyLimit}`);
+    this.name = "WorkspaceQuotaExceededError";
+  }
+}
 
 export async function registerUser(
   db: Db,
@@ -108,11 +128,19 @@ export async function createWorkspace(
   input: { name: string; slug: string; userId: string },
 ): Promise<string> {
   return db.transaction(async (tx) => {
-    const [ws] = await tx.insert(workspace).values({ name: input.name, slug: input.slug }).returning();
-    await tx.insert(workspaceMembers).values({ workspaceId: ws.id, userId: input.userId, role: "owner" });
+    const [ws] = await tx
+      .insert(workspace)
+      .values({ name: input.name, slug: input.slug })
+      .returning();
     await tx
-      .insert(workspaceQuotas)
-      .values({ workspaceId: ws.id, monthlyLimit: 1000, creditsUsed: 0, resetAt: nextMonthReset() });
+      .insert(workspaceMembers)
+      .values({ workspaceId: ws.id, userId: input.userId, role: "owner" });
+    await tx.insert(workspaceQuotas).values({
+      workspaceId: ws.id,
+      monthlyLimit: 1000,
+      creditsUsed: 0,
+      resetAt: nextMonthReset(),
+    });
     await tx.insert(workspaceSettings).values({ workspaceId: ws.id, settings: {} });
     return ws.id;
   });
@@ -192,10 +220,7 @@ export async function acceptInvitation(
     .insert(workspaceMembers)
     .values({ workspaceId: invitation.workspaceId, userId: input.userId, role: invitation.role })
     .onConflictDoNothing({ target: [workspaceMembers.workspaceId, workspaceMembers.userId] });
-  await db
-    .update(invitations)
-    .set({ status: "accepted" })
-    .where(eq(invitations.id, invitation.id));
+  await db.update(invitations).set({ status: "accepted" }).where(eq(invitations.id, invitation.id));
   return { workspaceId: invitation.workspaceId, role: invitation.role as Role };
 }
 
@@ -207,12 +232,7 @@ export async function getWorkspaceRole(
   const [membership] = await db
     .select()
     .from(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, workspaceId),
-        eq(workspaceMembers.userId, userId),
-      ),
-    )
+    .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)))
     .limit(1);
   return membership ? (membership.role as Role) : null;
 }
@@ -266,16 +286,80 @@ export async function consumeCredits(
   db: Db,
   input: { workspaceId: string; amount: number },
 ): Promise<{ creditsUsed: number; monthlyLimit: number }> {
-  const quota = await getWorkspaceQuota(db, input.workspaceId);
-  const next = quota.creditsUsed + input.amount;
-  if (next > quota.monthlyLimit) {
-    throw new Error(`Quota exceeded: ${next}/${quota.monthlyLimit}`);
+  return db.transaction((tx) => reserveCredits(tx, input));
+}
+
+/**
+ * Reserves workspace credits inside the caller's transaction.
+ *
+ * The workspace-scoped advisory lock serializes quota initialization, monthly
+ * rollover, and the conditional increment across every application process.
+ * Keeping this primitive transaction-aware lets a paid-operation coordinator
+ * commit the quota reservation and its job provenance atomically.
+ */
+export async function reserveCredits(
+  tx: AccountTransaction,
+  input: { workspaceId: string; amount: number },
+): Promise<{ creditsUsed: number; monthlyLimit: number }> {
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0) {
+    throw new InvalidCreditAmountError();
   }
-  await db
+
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`workspace-quota:${input.workspaceId}`}, 0))`,
+  );
+
+  await tx
+    .insert(workspaceQuotas)
+    .values({
+      workspaceId: input.workspaceId,
+      monthlyLimit: 1000,
+      creditsUsed: 0,
+      resetAt: nextMonthReset(),
+    })
+    .onConflictDoNothing({ target: workspaceQuotas.workspaceId });
+
+  let [quota] = await tx
+    .select()
+    .from(workspaceQuotas)
+    .where(eq(workspaceQuotas.workspaceId, input.workspaceId))
+    .limit(1)
+    .for("update");
+  if (!quota) {
+    throw new Error("Workspace quota could not be resolved");
+  }
+
+  const now = new Date();
+  if (new Date(quota.resetAt).getTime() <= now.getTime()) {
+    [quota] = await tx
+      .update(workspaceQuotas)
+      .set({ creditsUsed: 0, resetAt: nextMonthReset(), updatedAt: now })
+      .where(eq(workspaceQuotas.workspaceId, input.workspaceId))
+      .returning();
+  }
+
+  const [reserved] = await tx
     .update(workspaceQuotas)
-    .set({ creditsUsed: next, updatedAt: new Date() })
-    .where(eq(workspaceQuotas.workspaceId, input.workspaceId));
-  return { creditsUsed: next, monthlyLimit: quota.monthlyLimit };
+    .set({
+      creditsUsed: sql`${workspaceQuotas.creditsUsed} + ${input.amount}`,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(workspaceQuotas.workspaceId, input.workspaceId),
+        sql`${workspaceQuotas.creditsUsed} + ${input.amount} <= ${workspaceQuotas.monthlyLimit}`,
+      ),
+    )
+    .returning({
+      creditsUsed: workspaceQuotas.creditsUsed,
+      monthlyLimit: workspaceQuotas.monthlyLimit,
+    });
+
+  if (!reserved) {
+    throw new WorkspaceQuotaExceededError(input.amount, quota.creditsUsed, quota.monthlyLimit);
+  }
+
+  return reserved;
 }
 
 export async function getWorkspaceSettings(db: Db, workspaceId: string) {

@@ -169,6 +169,13 @@
       "when": 1788560844289,
       "tag": "0023_blue_millenium_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788607789813,
+      "tag": "0024_curvy_marvel_zombies",
+      "breakpoints": true
     }
   ]
 }
