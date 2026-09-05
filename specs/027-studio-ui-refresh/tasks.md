@@ -115,7 +115,7 @@ px with no page overflow, clipped menus or unreachable actions.
       add a factual canonical setup rail with refresh after entity/plan creation
 - [x] T035 Add synchronous duplicate guards for Entity and Episode Plan AI details generation and
       browser coverage for exact payload, pending state and input retention after failure
-- [ ] T036 Capture fresh launcher evidence at 375, 768 and 1440 px in light/dark, run focused and
+- [x] T036 Capture fresh launcher evidence at 375, 768 and 1440 px in light/dark, run focused and
       full validation, remediate independent review and update the completion report
 
 ## Dependencies

@@ -37,17 +37,23 @@ heading hierarchy, focus/touch sizes, light-theme status contrast, destructive a
 canonical Bible activation races, Episode Studio shot/preview races, QA per-finding locks, and paid
 job deduplication for Shot Graph, Generation Lab and reference sheets.
 
+The launcher follow-up review additionally caught an inferred workflow state, duplicated summary
+state, an undersized tab target and dark-theme destructive contrast. The final implementation uses
+only factual present/missing/unavailable setup data, refreshes the summary after entity/plan
+creation, restores 40 px tab targets and uses adaptive destructive foreground contrast.
+
 Final functional accessibility/security review: **0 BLOCKER / 0 HIGH**. Remaining review discussion
 was about the chosen layered evidence strategy; that strategy is now explicit in the feature
 Clarifications and quickstart rather than being implied by an impractical all-mutations E2E suite.
 
 ## Final validation
 
-- `bun run test`: **PASS** — 101 passed, 2 opt-in paid fal.ai smoke tests skipped, 0 failed.
+- `bun run test`: **PASS** — 112 passed, 2 opt-in paid fal.ai smoke tests skipped, 0 failed.
 - `bun run typecheck`: **PASS** across all packages, web and worker.
 - `bun run lint`: **PASS**.
 - `bun run build`: **PASS** for web and worker.
-- Production-build Playwright suite: **PASS** — 69 passed, 0 failed, one worker, fresh server.
+- Production-build Playwright suite: **PASS** — 71 passed, 0 failed, one worker, fresh isolated
+  server with the repository database configuration.
 - PostgreSQL concurrency regressions: **PASS** for identical keys, different concurrent attempt
   tokens, intentional later attempts and reference-sheet job/sheet reuse.
 - Changed-file Prettier check: **PASS**.
