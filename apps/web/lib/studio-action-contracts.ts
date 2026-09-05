@@ -12,7 +12,7 @@ export const studioActionContracts = [
     id: "series.generateBible",
     method: "POST",
     path: "/api/series/:id/generate-bible",
-    fields: [],
+    fields: ["details?"],
   },
   {
     id: "series.saveBible",
@@ -32,7 +32,12 @@ export const studioActionContracts = [
     path: "/api/entities",
     fields: ["seriesId", "type", "name", "data"],
   },
-  { id: "entities.generate", method: "POST", path: "/api/entities/:id/generate", fields: [] },
+  {
+    id: "entities.generate",
+    method: "POST",
+    path: "/api/entities/:id/generate",
+    fields: ["details?"],
+  },
   {
     id: "entities.activateVersion",
     method: "POST",
@@ -58,7 +63,12 @@ export const studioActionContracts = [
     path: "/api/series/:id/story-state",
     fields: ["kind", "data"],
   },
-  { id: "plans.create", method: "POST", path: "/api/series/:id/plans", fields: ["episodeNumber"] },
+  {
+    id: "plans.create",
+    method: "POST",
+    path: "/api/series/:id/plans",
+    fields: ["episodeNumber", "details?"],
+  },
   { id: "plans.approve", method: "POST", path: "/api/plans/:id/approve", fields: [] },
   { id: "plans.generateScenes", method: "POST", path: "/api/plans/:id/scenes", fields: [] },
   {

@@ -47,6 +47,7 @@
         "next": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
+        "zod": "catalog:",
       },
       "devDependencies": {
         "@axe-core/playwright": "catalog:",
@@ -306,6 +307,7 @@
       "dependencies": {
         "@ai-series/ai": "workspace:*",
         "@ai-series/db": "workspace:*",
+        "@ai-series/entities": "workspace:*",
         "@ai-series/prompts": "workspace:*",
         "@ai-series/series": "workspace:*",
         "@ai-series/story": "workspace:*",

@@ -72,6 +72,9 @@ describe("studio action compatibility contract", () => {
     });
     expect(byId["loops.scenes"]?.path).toBe("/api/loops/:id/scenes");
     expect(byId["prompts.create"]?.fields).toEqual(["purpose", "name", "template"]);
+    expect(byId["series.generateBible"]?.fields).toEqual(["details?"]);
+    expect(byId["entities.generate"]?.fields).toEqual(["details?"]);
+    expect(byId["plans.create"]?.fields).toEqual(["episodeNumber", "details?"]);
     expect(byId["assets.delete"]?.method).toBe("DELETE");
     expect(byId["studio.resolveQa"]?.fields).toEqual(["status"]);
   });
