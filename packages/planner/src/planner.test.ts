@@ -79,6 +79,15 @@ describe("episode plan entity context", () => {
     expect(parsed.props).toEqual([]);
   });
 
+  it("ignores non-canonical historical entity types", () => {
+    const context = buildEntitiesContext([
+      { id: "bad", type: "vehicle", name: "Van", data: {} },
+      { id: "c1", type: "character", name: "Alex", data: {} },
+    ] as Parameters<typeof buildEntitiesContext>[0]);
+
+    expect(JSON.parse(context).characters).toEqual([{ id: "c1", name: "Alex", data: {} }]);
+  });
+
   it("appends entities context with ids-only instruction", () => {
     const prompt = appendEntitiesContext("Create a plan", "{}");
     expect(prompt).toContain("Available series entities");

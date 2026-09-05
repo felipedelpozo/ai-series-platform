@@ -11,7 +11,8 @@ import {
 import { generateStructured } from "@ai-series/ai";
 import { getActivePrompt, renderTemplate } from "@ai-series/prompts";
 
-export type EntityType = "character" | "location" | "prop";
+export const EntityTypeSchema = z.enum(["character", "location", "prop"]);
+export type EntityType = z.infer<typeof EntityTypeSchema>;
 
 export type ActiveEntity = {
   id: string;
@@ -161,12 +162,10 @@ export async function listActiveEntities(db: Db, seriesId: string): Promise<Acti
     .where(eq(entities.seriesId, seriesId))
     .orderBy(asc(entities.createdAt));
 
-  return rows.map((row) => ({
-    id: row.id,
-    type: row.type as EntityType,
-    name: row.name,
-    data: row.data,
-  }));
+  return rows.flatMap((row) => {
+    const type = EntityTypeSchema.safeParse(row.type);
+    return type.success ? [{ id: row.id, type: type.data, name: row.name, data: row.data }] : [];
+  });
 }
 
 export async function getEntityDetail(db: Db, entityId: string) {
@@ -209,9 +208,11 @@ export async function generateEntityProposal(
 ): Promise<string> {
   const [entity] = await db.select().from(entities).where(eq(entities.id, entityId));
   if (!entity) throw new Error("Entity not found");
+  const entityType = EntityTypeSchema.safeParse(entity.type);
+  if (!entityType.success) throw new Error("Unsupported entity type");
   const [s] = await db.select().from(series).where(eq(series.id, entity.seriesId));
 
-  const purpose = PROMPT_PURPOSE[entity.type as EntityType];
+  const purpose = PROMPT_PURPOSE[entityType.data];
   const active = await getActivePrompt(db, purpose);
   if (!active) throw new Error(`No active ${purpose} prompt`);
   const details = input.details?.trim();
@@ -232,7 +233,7 @@ export async function generateEntityProposal(
 
   const object = (await generateStructured({
     prompt: finalPrompt,
-    schema: dataSchema(entity.type as EntityType),
+    schema: dataSchema(entityType.data),
   })) as Record<string, unknown>;
 
   const [snapshot] = await db

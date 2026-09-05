@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@ai-series/db";
 import { generateEntityProposal } from "@ai-series/entities";
+import { readOptionalJsonBody } from "@/lib/request-body";
 
 const GenerateEntityInputSchema = z.object({
   details: z.string().trim().max(4000, "Entity details must be 4000 characters or less").optional(),
@@ -9,7 +10,15 @@ const GenerateEntityInputSchema = z.object({
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
+  let body: unknown;
+  try {
+    body = await readOptionalJsonBody(request);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Invalid JSON body" },
+      { status: 400 },
+    );
+  }
   const input = GenerateEntityInputSchema.safeParse(body);
   if (!input.success) {
     return NextResponse.json({ error: input.error.issues[0]?.message }, { status: 400 });

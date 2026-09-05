@@ -424,7 +424,7 @@ export function SeriesPlans({
                   </div>
 
                   <details open={plan.isActive} className="mt-4 rounded-lg border bg-muted/20">
-                    <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring">
+                    <summary className="flex min-h-10 cursor-pointer items-center px-3 py-2 text-xs font-medium text-muted-foreground outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring">
                       Full plan details
                     </summary>
                     <div className="border-t bg-background/70 p-4">

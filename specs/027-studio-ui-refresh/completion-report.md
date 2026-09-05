@@ -42,13 +42,19 @@ state, an undersized tab target and dark-theme destructive contrast. The final i
 only factual present/missing/unavailable setup data, refreshes the summary after entity/plan
 creation, restores 40 px tab targets and uses adaptive destructive foreground contrast.
 
+The final architecture pass also found that a non-canonical historical entity type could break
+episode context grouping. Entity types are now validated at the HTTP boundary, filtered again when
+read from persistence and ignored defensively by the planner. Malformed non-empty JSON is rejected
+instead of silently triggering default generation, while the compatible empty-body behavior is
+preserved.
+
 Final functional accessibility/security review: **0 BLOCKER / 0 HIGH**. Remaining review discussion
 was about the chosen layered evidence strategy; that strategy is now explicit in the feature
 Clarifications and quickstart rather than being implied by an impractical all-mutations E2E suite.
 
 ## Final validation
 
-- `bun run test`: **PASS** — 112 passed, 2 opt-in paid fal.ai smoke tests skipped, 0 failed.
+- `bun run test`: **PASS** — 118 passed, 2 opt-in paid fal.ai smoke tests skipped, 0 failed.
 - `bun run typecheck`: **PASS** across all packages, web and worker.
 - `bun run lint`: **PASS**.
 - `bun run build`: **PASS** for web and worker.

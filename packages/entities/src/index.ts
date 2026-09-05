@@ -10,6 +10,7 @@ export {
   CharacterSchema,
   LocationSchema,
   PropSchema,
+  EntityTypeSchema,
 } from "./entities";
 export type { EntityType, ActiveEntity } from "./entities";
 export {

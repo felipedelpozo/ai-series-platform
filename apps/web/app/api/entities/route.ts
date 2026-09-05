@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { getDb } from "@ai-series/db";
-import { createEntity, listEntities } from "@ai-series/entities";
+import { createEntity, EntityTypeSchema, listEntities } from "@ai-series/entities";
+
+const CreateEntityInputSchema = z.object({
+  seriesId: z.string(),
+  type: EntityTypeSchema,
+  name: z.string(),
+  data: z.record(z.string(), z.unknown()).default({}),
+});
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -13,14 +21,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
   try {
-    const id = await createEntity(getDb(), {
-      seriesId: body.seriesId,
-      type: body.type,
-      name: body.name,
-      data: body.data ?? {},
-    });
+    const input = CreateEntityInputSchema.parse(await request.json());
+    const id = await createEntity(getDb(), input);
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {
     return NextResponse.json(

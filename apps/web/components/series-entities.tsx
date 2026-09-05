@@ -457,7 +457,7 @@ export function SeriesEntities({
                               )}
                             </div>
                             <details open={version.isActive} className="border-t bg-background/70">
-                              <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring">
+                              <summary className="flex min-h-10 cursor-pointer items-center px-3 py-2 text-xs font-medium text-muted-foreground outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring">
                                 Full version details
                               </summary>
                               <div className="border-t p-3">

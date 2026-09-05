@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@ai-series/db";
 import { generateEpisodePlan, listEpisodePlans } from "@ai-series/planner";
+import { readOptionalJsonBody } from "@/lib/request-body";
 
 const GeneratePlanInputSchema = z.object({
   episodeNumber: z.coerce.number().int().min(1).optional(),
-  audienceDecision: z.string().trim().max(4000).optional(),
+  audienceDecision: z.string().optional(),
   details: z
     .string()
     .trim()
@@ -21,7 +22,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
+  let body: unknown;
+  try {
+    body = await readOptionalJsonBody(request);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Invalid JSON body" },
+      { status: 400 },
+    );
+  }
   const input = GeneratePlanInputSchema.safeParse(body);
   if (!input.success) {
     return NextResponse.json({ error: input.error.issues[0]?.message }, { status: 400 });

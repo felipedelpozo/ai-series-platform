@@ -1,7 +1,18 @@
 import { describe, expect, it } from "bun:test";
-import { CharacterSchema, LocationSchema, PropSchema, buildEntityPrompt } from "./entities";
+import {
+  CharacterSchema,
+  EntityTypeSchema,
+  LocationSchema,
+  PropSchema,
+  buildEntityPrompt,
+} from "./entities";
 
 describe("entity schemas", () => {
+  it("accepts only canonical entity types", () => {
+    expect(EntityTypeSchema.parse("character")).toBe("character");
+    expect(EntityTypeSchema.safeParse("vehicle").success).toBe(false);
+  });
+
   it("validates a character with defaults", () => {
     const c = CharacterSchema.parse({
       role: "hero",

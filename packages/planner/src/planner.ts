@@ -39,6 +39,7 @@ export function buildEntitiesContext(activeEntities: ActiveEntity[]): string {
       prop: [],
     };
   for (const entity of activeEntities) {
+    if (!Object.hasOwn(groups, entity.type)) continue;
     groups[entity.type].push({ id: entity.id, name: entity.name, data: entity.data });
   }
   return JSON.stringify(
@@ -66,6 +67,7 @@ export function sanitizePlanEntityIds(
     prop: new Set(),
   };
   for (const entity of activeEntities) {
+    if (!Object.hasOwn(idsByType, entity.type)) continue;
     idsByType[entity.type].add(entity.id);
   }
   return {
