@@ -21,6 +21,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "postgres": "catalog:",
     "typescript": "catalog:",
     "@types/bun": "catalog:"
   }

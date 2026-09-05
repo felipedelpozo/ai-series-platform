@@ -1,6 +1,9 @@
 export {
   createEntity,
+  createEntityInWorkspace,
   editEntity,
+  appendEntityRevisionInWorkspace,
+  archiveEntityInWorkspace,
   activateEntityVersion,
   listEntities,
   listActiveEntities,
@@ -8,11 +11,11 @@ export {
   attachReferenceAsset,
   generateEntityProposal,
   CharacterSchema,
+  EntityTypeSchema,
   LocationSchema,
   PropSchema,
-  EntityTypeSchema,
 } from "./entities";
-export type { EntityType, ActiveEntity } from "./entities";
+export type { ActiveEntity, EntityRevisionResult, EntityType } from "./entities";
 export {
   generateReferenceSheet,
   listReferenceSheets,

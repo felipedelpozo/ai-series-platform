@@ -19,6 +19,8 @@ export const PURPOSES = [
   "qa.visual",
   "qa.continuity",
   "repair.regenerate",
+  "copilot.answer",
+  "copilot.proposal",
 ] as const;
 
 export type Purpose = (typeof PURPOSES)[number];

@@ -84,11 +84,14 @@ async function assertMobileKeyboardJourney(page: Page) {
     .locator('[role="dialog"] button:visible, [role="dialog"] a:visible')
     .evaluateAll((elements) =>
       elements
-        .filter(
-          (element) =>
-            element.getRootNode() === document &&
-            element.getAttribute("aria-label") !== "Open Next.js Dev Tools",
-        )
+        .filter((element) => {
+          const root = element.getRootNode();
+          return !(
+            element.getAttribute("aria-label") === "Open Next.js Dev Tools" ||
+            element.closest("nextjs-portal") ||
+            (root instanceof ShadowRoot && root.host.tagName.toLowerCase().includes("nextjs"))
+          );
+        })
         .map((element) => ({
           name: element.getAttribute("aria-label") ?? element.textContent?.trim(),
           height: element.getBoundingClientRect().height,
@@ -136,6 +139,14 @@ async function assertTouchTargets(page: Page) {
     )
     .evaluateAll((elements) =>
       elements
+        .filter((element) => {
+          const root = element.getRootNode();
+          return !(
+            element.getAttribute("aria-label") === "Open Next.js Dev Tools" ||
+            element.closest("nextjs-portal") ||
+            (root instanceof ShadowRoot && root.host.tagName.toLowerCase().includes("nextjs"))
+          );
+        })
         .map((element) => ({
           name:
             element.getAttribute("aria-label") ?? element.textContent?.trim() ?? element.tagName,
@@ -160,10 +171,15 @@ async function assertTouchTargets(page: Page) {
   expect(undersizedPrimaryActions).toEqual([]);
 }
 
-test("root preserves the canonical Series destination", async ({ page }) => {
+test("root opens the Creative copilot and preserves Series navigation", async ({ page }) => {
   await installEmptyApi(page);
   await page.goto("/");
-  await expect(page).toHaveURL(/\/series$/);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByText("Creative copilot", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Series", exact: true }).first()).toHaveAttribute(
+    "href",
+    "/series",
+  );
 });
 
 for (const width of viewports) {
@@ -973,11 +989,15 @@ test("every primary route exposes a complete visible keyboard focus path", async
           .filter((element) => {
             const rect = element.getBoundingClientRect();
             const style = getComputedStyle(element);
+            const root = element.getRootNode();
             return (
               element.getRootNode() === document &&
               element instanceof HTMLElement &&
               element.tabIndex >= 0 &&
               element.getAttribute("role") !== "tablist" &&
+              element.getAttribute("aria-label") !== "Open Next.js Dev Tools" &&
+              !element.closest("nextjs-portal") &&
+              !(root instanceof ShadowRoot && root.host.tagName.toLowerCase().includes("nextjs")) &&
               rect.width > 0 &&
               rect.height > 0 &&
               style.visibility !== "hidden"

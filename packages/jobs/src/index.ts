@@ -1,6 +1,8 @@
 export {
   enqueueJob,
   enqueueActiveJob,
+  reconcilePaidJob,
+  reconcilePaidJobInTransaction,
   claimNextJob,
   completeJob,
   failJob,
@@ -10,5 +12,12 @@ export {
   listJobs,
   getJobDetail,
 } from "./jobs";
-export type { JobStatus, EnqueueInput } from "./jobs";
+export { PaidJobNotReusableError } from "./jobs";
+export type {
+  JobStatus,
+  EnqueueInput,
+  JobTransaction,
+  PaidJobInput,
+  ReconciledPaidJob,
+} from "./jobs";
 export { shouldRetry } from "./jobs";

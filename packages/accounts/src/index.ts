@@ -16,8 +16,10 @@ export {
   getWorkspaceQuota,
   setWorkspaceQuota,
   consumeCredits,
+  reserveCredits,
   getWorkspaceSettings,
   setWorkspaceSettings,
 } from "./accounts";
 export { ROLE_RANK } from "./accounts";
-export type { Role, PublicUser } from "./accounts";
+export { InvalidCreditAmountError, WorkspaceQuotaExceededError } from "./accounts";
+export type { AccountTransaction, Role, PublicUser } from "./accounts";

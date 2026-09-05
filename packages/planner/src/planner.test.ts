@@ -1,6 +1,8 @@
 import { describe, expect, it } from "bun:test";
+import type { Db } from "@ai-series/db";
 import {
   EpisodePlanSchema,
+  appendEpisodePlanRevisionInWorkspace,
   appendEntitiesContext,
   buildEntitiesContext,
   buildEpisodePlanPrompt,
@@ -44,6 +46,51 @@ describe("episode plan schema", () => {
 
   it("rejects a plan missing required fields", () => {
     expect(() => EpisodePlanSchema.parse({ hook: "x" })).toThrow();
+  });
+
+  it("appends and activates a plan revision through the caller executor", async () => {
+    const inserts: Record<string, unknown>[] = [];
+    let selectCount = 0;
+    const executor = {
+      select: () => {
+        selectCount += 1;
+        if (selectCount === 1) {
+          return {
+            from: () => ({
+              where: () => ({
+                limit: () => ({ for: async () => [{ id: "series-1" }] }),
+              }),
+            }),
+          };
+        }
+        return { from: () => ({ where: async () => [{ version: 1 }] }) };
+      },
+      update: () => ({ set: () => ({ where: async () => undefined }) }),
+      insert: () => ({
+        values: (value: Record<string, unknown>) => {
+          inserts.push(value);
+          return { returning: async () => [{ id: "plan-2" }] };
+        },
+      }),
+      transaction: () => {
+        throw new Error("primitive opened a nested transaction");
+      },
+    } as unknown as Db;
+
+    const result = await appendEpisodePlanRevisionInWorkspace(executor, {
+      workspaceId: "workspace-1",
+      seriesId: "series-1",
+      episodeNumber: 1,
+      data: valid,
+    });
+
+    expect(result).toEqual({ id: "plan-2", version: 2 });
+    expect(inserts[0]).toMatchObject({
+      seriesId: "series-1",
+      episodeNumber: 1,
+      version: 2,
+      isActive: true,
+    });
   });
 });
 

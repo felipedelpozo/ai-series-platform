@@ -1,12 +1,12 @@
 import { type Db } from "@ai-series/db";
 import { claimNextJob, completeJob, failJob, setJobGeneration } from "@ai-series/jobs";
 import {
+  InvalidGenerationJobInputError,
+  parseGenerationJobInput,
   pollImageGeneration,
   pollVideoGeneration,
   startImageGeneration,
   startVideoGeneration,
-  type StartImageInput,
-  type StartVideoInput,
 } from "@ai-series/generation";
 import {
   estimateCost,
@@ -19,8 +19,30 @@ function message(error: unknown): string {
   return error instanceof Error ? error.message : "unknown worker error";
 }
 
+export function shouldRetryWorkerError(error: unknown): boolean {
+  return !(error instanceof InvalidGenerationJobInputError);
+}
+
+export function verifiedProviderActualCost(evidence: unknown): number | undefined {
+  if (
+    typeof evidence !== "object" ||
+    evidence === null ||
+    !("source" in evidence) ||
+    evidence.source !== "provider_response" ||
+    !("verified" in evidence) ||
+    evidence.verified !== true ||
+    !("amount" in evidence) ||
+    typeof evidence.amount !== "number" ||
+    !Number.isFinite(evidence.amount) ||
+    evidence.amount < 0
+  ) {
+    return undefined;
+  }
+  return evidence.amount;
+}
+
 export async function processOneJob(db: Db): Promise<boolean> {
-  const claimed = await claimNextJob(db, ["image", "video"]);
+  const claimed = await claimNextJob(db, ["image", "video", "image.generate", "video.generate"]);
   if (!claimed) {
     return false;
   }
@@ -49,15 +71,16 @@ export async function processOneJob(db: Db): Promise<boolean> {
   let errorText: string | undefined;
 
   try {
-    if (job.kind === "image") {
-      const { id: generationId, requestId } = await startImageGeneration(
-        db,
-        job.input as StartImageInput,
-      );
+    const parsed = parseGenerationJobInput(job.kind, job.input, {
+      workspaceId: job.workspaceId,
+      model: job.model,
+    });
+    if (parsed.kind === "image") {
+      const { id: generationId, requestId } = await startImageGeneration(db, parsed.input);
       await setJobGeneration(db, job.id, generationId, requestId);
       let generation;
       for (;;) {
-        generation = await pollImageGeneration(db, generationId);
+        generation = await pollImageGeneration(db, job.workspaceId, generationId);
         if (generation.status === "succeeded" || generation.status === "failed") break;
         await Bun.sleep(2000);
       }
@@ -72,14 +95,11 @@ export async function processOneJob(db: Db): Promise<boolean> {
         });
       }
     } else {
-      const { id: generationId, requestId } = await startVideoGeneration(
-        db,
-        job.input as StartVideoInput,
-      );
+      const { id: generationId, requestId } = await startVideoGeneration(db, parsed.input);
       await setJobGeneration(db, job.id, generationId, requestId);
       let generation;
       for (;;) {
-        generation = await pollVideoGeneration(db, generationId);
+        generation = await pollVideoGeneration(db, job.workspaceId, generationId);
         if (generation.status === "succeeded" || generation.status === "failed") break;
         await Bun.sleep(3000);
       }
@@ -97,7 +117,10 @@ export async function processOneJob(db: Db): Promise<boolean> {
   } catch (error) {
     status = "error";
     errorText = message(error);
-    await failJob(db, job.id, errorText, { retryable: true, attemptId: attempt.id });
+    await failJob(db, job.id, errorText, {
+      retryable: shouldRetryWorkerError(error),
+      attemptId: attempt.id,
+    });
   }
 
   await recordCostActual(db, {
@@ -112,7 +135,10 @@ export async function processOneJob(db: Db): Promise<boolean> {
     kind,
     status,
     durationMs: Date.now() - startedAt,
-    actualCost: estimateCost(kind, model),
+    // The current fal adapter exposes no provider-verified billing amount.
+    // Persist the completion evidence with NULL actual_cost; the earlier
+    // estimate remains available in its separate estimate-phase record.
+    actualCost: verifiedProviderActualCost(undefined),
     correlationId,
     error: errorText,
   });

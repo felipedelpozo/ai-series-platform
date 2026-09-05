@@ -18,11 +18,13 @@
       "version": "0.0.0",
       "dependencies": {
         "@ai-series/accounts": "workspace:*",
+        "@ai-series/ai": "workspace:*",
         "@ai-series/audience": "workspace:*",
         "@ai-series/audio": "workspace:*",
         "@ai-series/comfy": "workspace:*",
         "@ai-series/composition": "workspace:*",
         "@ai-series/config": "workspace:*",
+        "@ai-series/copilot": "workspace:*",
         "@ai-series/db": "workspace:*",
         "@ai-series/decision": "workspace:*",
         "@ai-series/director": "workspace:*",
@@ -57,6 +59,7 @@
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
+        "postgres": "catalog:",
         "tailwindcss": "catalog:",
         "typescript": "catalog:",
       },
@@ -86,6 +89,7 @@
       },
       "devDependencies": {
         "@types/bun": "catalog:",
+        "postgres": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -152,6 +156,17 @@
     },
     "packages/config": {
       "name": "@ai-series/config",
+      "version": "0.0.0",
+      "dependencies": {
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/copilot": {
+      "name": "@ai-series/copilot",
       "version": "0.0.0",
       "dependencies": {
         "zod": "catalog:",
@@ -316,6 +331,7 @@
       },
       "devDependencies": {
         "@types/bun": "catalog:",
+        "postgres": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -498,6 +514,8 @@
     "@ai-series/composition": ["@ai-series/composition@workspace:packages/composition"],
 
     "@ai-series/config": ["@ai-series/config@workspace:packages/config"],
+
+    "@ai-series/copilot": ["@ai-series/copilot@workspace:packages/copilot"],
 
     "@ai-series/db": ["@ai-series/db@workspace:packages/db"],
 

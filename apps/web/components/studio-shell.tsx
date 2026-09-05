@@ -1,11 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { cn } from "@ai-series/ui";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@ai-series/ui";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
 
 export function StudioShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mobileTriggerRef = useRef<HTMLButtonElement>(null);
@@ -45,9 +48,14 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
         <main
           id="main-content"
           tabIndex={-1}
-          className="min-w-0 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8"
+          className={cn(
+            "min-w-0 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8",
+            pathname === "/" && "lg:py-6",
+          )}
         >
-          <div className="mx-auto w-full max-w-[96rem]">{children}</div>
+          <div className={cn("mx-auto w-full max-w-[96rem]", pathname === "/" && "max-w-[110rem]")}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

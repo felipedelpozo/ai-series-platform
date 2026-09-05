@@ -8,6 +8,13 @@ export type StudioNavItem = {
 
 export const studioNavigation = [
   {
+    href: "/",
+    label: "Creative copilot",
+    shortLabel: "Copilot",
+    description: "Turn creative intent into reviewable, approved canonical changes.",
+    group: "Create",
+  },
+  {
     href: "/series",
     label: "Series",
     shortLabel: "Series",
@@ -71,7 +78,9 @@ export function getStudioRoute(pathname: string): StudioNavItem {
 
   return (
     studioNavigation.find((item) =>
-      item.href === "/series" ? pathname === item.href : pathname.startsWith(item.href),
+      item.href === "/" || item.href === "/series"
+        ? pathname === item.href
+        : pathname.startsWith(item.href),
     ) ?? studioNavigation[0]
   );
 }

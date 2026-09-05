@@ -41,3 +41,18 @@ export async function generateStructured<T extends z.ZodTypeAny>(input: {
     );
   }
 }
+
+export {
+  calculateCopilotActualCost,
+  COPILOT_AI_LIMITS,
+  estimateCopilotMaximumCost,
+  generateCopilotObject,
+  getCopilotInferenceMetadata,
+  normalizeCopilotUsage,
+} from "./copilot";
+export type {
+  CopilotInferenceMetadata,
+  CopilotObjectResult,
+  CopilotTokenPricing,
+  CopilotTokenUsage,
+} from "./copilot";

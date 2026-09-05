@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { assets, generations, promptSnapshots, promptTemplates, type Db } from "@ai-series/db";
 import {
   DEFAULT_VIDEO_MODEL_I2V,
@@ -11,9 +11,11 @@ import {
   videoStatus,
 } from "@ai-series/fal";
 import { renderTemplate } from "@ai-series/prompts";
-import { assetStoreDir, ingestAsset, resolveActiveVersion, resolveWorkspaceId } from "./image";
+import { assetStoreDir, ingestAsset, resolveActiveVersion } from "./image";
+import { InvalidGenerationJobInputError } from "./job-input";
 
 export type StartVideoInput = {
+  workspaceId: string;
   templateId?: string;
   versionId?: string;
   variables: Record<string, string>;
@@ -26,29 +28,47 @@ export async function startVideoGeneration(
   db: Db,
   input: StartVideoInput,
 ): Promise<{ id: string; requestId: string }> {
-  const workspaceId = await resolveWorkspaceId(db);
   const version = await resolveActiveVersion(db, input);
   if (!version) {
-    throw new Error("No prompt version found; provide templateId or versionId");
+    throw new InvalidGenerationJobInputError(
+      "No prompt version found; provide templateId or versionId",
+    );
   }
 
   const [template] = await db
     .select()
     .from(promptTemplates)
-    .where(eq(promptTemplates.id, version.templateId));
+    .where(
+      and(
+        eq(promptTemplates.id, version.templateId),
+        eq(promptTemplates.workspaceId, input.workspaceId),
+      ),
+    );
+  if (!template) {
+    throw new InvalidGenerationJobInputError(
+      "No prompt version found; provide templateId or versionId",
+    );
+  }
 
-  const { rendered, missing } = renderTemplate(version.template, input.variables, version.variables);
+  const { rendered, missing } = renderTemplate(
+    version.template,
+    input.variables,
+    version.variables,
+  );
   if (missing.length > 0) {
-    throw new Error(`Missing required variables: ${missing.join(", ")}`);
+    throw new InvalidGenerationJobInputError(`Missing required variables: ${missing.join(", ")}`);
   }
   const params = input.params ?? {};
 
   let model: string;
   let imageUrl: string | undefined;
   if (input.sourceAssetId) {
-    const [asset] = await db.select().from(assets).where(eq(assets.id, input.sourceAssetId));
+    const [asset] = await db
+      .select()
+      .from(assets)
+      .where(and(eq(assets.id, input.sourceAssetId), eq(assets.workspaceId, input.workspaceId)));
     if (!asset || asset.kind !== "image") {
-      throw new Error("Source asset not found or is not an image");
+      throw new InvalidGenerationJobInputError("Source asset not found or is not an image");
     }
     const buffer = await readFile(join(assetStoreDir(), asset.id));
     imageUrl = await uploadImage(buffer, asset.mime ?? "image/png");
@@ -81,7 +101,7 @@ export async function startVideoGeneration(
   const [generation] = await db
     .insert(generations)
     .values({
-      workspaceId,
+      workspaceId: input.workspaceId,
       purpose: template.purpose,
       templateId: template.id,
       versionId: version.id,
@@ -98,8 +118,11 @@ export async function startVideoGeneration(
   return { id: generation.id, requestId };
 }
 
-export async function pollVideoGeneration(db: Db, id: string) {
-  const [generation] = await db.select().from(generations).where(eq(generations.id, id));
+export async function pollVideoGeneration(db: Db, workspaceId: string, id: string) {
+  const [generation] = await db
+    .select()
+    .from(generations)
+    .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
   if (!generation) {
     throw new Error("Generation not found");
   }
@@ -113,12 +136,12 @@ export async function pollVideoGeneration(db: Db, id: string) {
       await db
         .update(generations)
         .set({ status: "queued", updatedAt: new Date() })
-        .where(eq(generations.id, id));
+        .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
     } else if (status.status === "IN_PROGRESS") {
       await db
         .update(generations)
         .set({ status: "running", updatedAt: new Date() })
-        .where(eq(generations.id, id));
+        .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
     } else {
       const result = await videoResult(generation.model, generation.requestId!);
       await ingestAsset(db, {
@@ -132,7 +155,7 @@ export async function pollVideoGeneration(db: Db, id: string) {
       await db
         .update(generations)
         .set({ status: "succeeded", updatedAt: new Date() })
-        .where(eq(generations.id, id));
+        .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
     }
   } catch (error) {
     await db
@@ -142,9 +165,15 @@ export async function pollVideoGeneration(db: Db, id: string) {
         error: error instanceof Error ? error.message : "unknown generation error",
         updatedAt: new Date(),
       })
-      .where(eq(generations.id, id));
+      .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
   }
 
-  const [updated] = await db.select().from(generations).where(eq(generations.id, id));
-  return updated!;
+  const [updated] = await db
+    .select()
+    .from(generations)
+    .where(and(eq(generations.id, id), eq(generations.workspaceId, workspaceId)));
+  if (!updated) {
+    throw new Error("Generation not found");
+  }
+  return updated;
 }

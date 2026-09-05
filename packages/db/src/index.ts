@@ -41,15 +41,27 @@ export {
   invitations,
   workspaceQuotas,
   workspaceSettings,
+  copilotConversations,
+  copilotContextSnapshots,
+  copilotMessages,
+  copilotEvents,
+  copilotProposals,
+  copilotProposalRevisions,
+  copilotRevisionTargets,
+  copilotValidationRuns,
+  copilotValidationFindings,
+  copilotDecisions,
+  copilotApplications,
+  copilotApplicationReceipts,
+  copilotCostQuotes,
+  copilotCostConfirmations,
+  copilotInferenceUsage,
+  copilotRateLimitBuckets,
+  copilotJobBindings,
 } from "./schema";
 export * as schema from "./schema";
 export type { PromptVariable } from "./schema";
-export {
-  getDb,
-  checkDb,
-  ensureDefaultWorkspace,
-  DatabaseConfigError,
-} from "./client";
+export { getDb, checkDb, ensureDefaultWorkspace, DatabaseConfigError } from "./client";
 export type { Db, DbHealth } from "./client";
 export { insertAuditLog } from "./audit";
 export type { AuditInput } from "./audit";
