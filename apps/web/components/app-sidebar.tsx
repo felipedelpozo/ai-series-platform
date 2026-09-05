@@ -2,50 +2,151 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clapperboard, Gauge, Images, MessageSquareText, Settings, Sparkles, Users } from "lucide-react";
-import { cn, Separator } from "@ai-series/ui";
+import {
+  Clapperboard,
+  Gauge,
+  Images,
+  MessageSquareText,
+  Settings,
+  Sparkles,
+  Users,
+  WandSparkles,
+} from "lucide-react";
+import {
+  cn,
+  Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@ai-series/ui";
+import { studioNavigation } from "@/lib/studio-navigation";
 
-const navItems = [
-  { href: "/series", label: "Series", icon: Clapperboard },
-  { href: "/assets", label: "Assets", icon: Images },
-  { href: "/prompts", label: "Prompts", icon: MessageSquareText },
-  { href: "/generations", label: "Generations", icon: Sparkles },
-  { href: "/ops", label: "Operations", icon: Gauge },
-  { href: "/accounts", label: "Accounts", icon: Users },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
+const icons = {
+  "/series": Clapperboard,
+  "/assets": Images,
+  "/prompts": MessageSquareText,
+  "/generations": WandSparkles,
+  "/ops": Gauge,
+  "/accounts": Users,
+  "/settings": Settings,
+} as const;
 
-export function AppSidebar() {
+function isActive(pathname: string, href: string) {
+  return href === "/series" ? pathname === href : pathname.startsWith(href);
+}
+
+export function AppSidebar({
+  collapsed = false,
+  mobile = false,
+  onNavigate,
+}: {
+  collapsed?: boolean;
+  mobile?: boolean;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r bg-background">
-      <div className="flex h-14 items-center gap-2 px-4">
-        <Sparkles className="size-5" aria-hidden="true" />
-        <span className="text-base font-semibold">AI Series Platform</span>
+    <div className="flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground">
+      <div
+        className={cn(
+          "flex h-16 shrink-0 items-center gap-3 px-4",
+          collapsed && !mobile && "justify-center px-2",
+        )}
+      >
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+          <Sparkles className="size-4" aria-hidden="true" />
+        </span>
+        {collapsed && !mobile ? null : (
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold tracking-tight">AI Series</p>
+            <p className="truncate font-mono text-[0.625rem] uppercase tracking-[0.18em] text-sidebar-foreground/70">
+              Production desk
+            </p>
+          </div>
+        )}
       </div>
-      <Separator />
-      <nav className="flex flex-1 flex-col gap-1 p-2" aria-label="Main">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = href === "/series" ? pathname === href : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+      <Separator className="bg-sidebar-border" />
+      <TooltipProvider delayDuration={150}>
+        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-4" aria-label="Main navigation">
+          {(["Create", "Manage"] as const).map((group) => (
+            <div key={group} className="mb-5 last:mb-0">
+              {collapsed && !mobile ? null : (
+                <p className="mb-2 px-2 font-mono text-[0.625rem] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/70">
+                  {group}
+                </p>
               )}
-            >
-              <Icon className="size-4" aria-hidden="true" />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+              <ul className="space-y-1">
+                {studioNavigation
+                  .filter((item) => item.group === group)
+                  .map((item) => {
+                    const Icon = icons[item.href];
+                    const active = isActive(pathname, item.href);
+                    const link = (
+                      <Link
+                        href={item.href}
+                        onClick={onNavigate}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "group flex min-h-10 items-center gap-3 rounded-md px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-sidebar-primary",
+                          active
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_2px_0_0_var(--sidebar-primary)]"
+                            : "text-sidebar-foreground/68 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+                          collapsed && !mobile && "justify-center px-2",
+                        )}
+                      >
+                        <Icon className="size-[1.125rem] shrink-0" aria-hidden="true" />
+                        {collapsed && !mobile ? (
+                          <span className="sr-only">{item.shortLabel}</span>
+                        ) : (
+                          item.shortLabel
+                        )}
+                      </Link>
+                    );
+                    return (
+                      <li key={item.href}>
+                        {collapsed && !mobile ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>{link}</TooltipTrigger>
+                            <TooltipContent side="right">{item.label}</TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          link
+                        )}
+                      </li>
+                    );
+                  })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+      </TooltipProvider>
+      <div
+        className={cn(
+          "shrink-0 border-t border-sidebar-border p-3",
+          collapsed && !mobile && "px-2",
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center gap-3 rounded-md px-2 py-2",
+            collapsed && !mobile && "justify-center px-0",
+          )}
+        >
+          <span className="grid size-8 shrink-0 place-items-center rounded-full border border-sidebar-border bg-sidebar-accent font-mono text-[0.625rem] font-semibold">
+            AI
+          </span>
+          {collapsed && !mobile ? null : (
+            <div className="min-w-0">
+              <p className="truncate text-xs font-medium">Local workspace</p>
+              <p className="truncate text-[0.6875rem] text-sidebar-foreground/70">
+                Creator environment
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

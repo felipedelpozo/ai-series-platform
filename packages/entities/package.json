@@ -3,8 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "typecheck": "tsc --noEmit", "test": "bun test" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
   "dependencies": {
     "@ai-series/ai": "workspace:*",
     "@ai-series/db": "workspace:*",
@@ -13,5 +18,9 @@
     "drizzle-orm": "catalog:",
     "zod": "catalog:"
   },
-  "devDependencies": { "typescript": "catalog:", "@types/bun": "catalog:" }
+  "devDependencies": {
+    "postgres": "catalog:",
+    "typescript": "catalog:",
+    "@types/bun": "catalog:"
+  }
 }

@@ -1,14 +1,5 @@
-import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import {
-  assets,
-  generationSteps,
-  jobs,
-  scenes,
-  shots,
-  workspace,
-  type Db,
-} from "@ai-series/db";
+import { assets, generationSteps, jobs, scenes, shots, workspace, type Db } from "@ai-series/db";
 import { enqueueJob } from "@ai-series/jobs";
 import { getActivePrompt } from "@ai-series/prompts";
 
@@ -24,28 +15,58 @@ async function resolveWorkspaceId(db: Db): Promise<string> {
 async function enqueueStep(
   db: Db,
   input: { shotId: string; kind: "keyframe" | "video"; prompt: string },
-): Promise<string> {
+): Promise<{ stepId: string; reused: boolean }> {
   const purpose = input.kind === "keyframe" ? "image.generate" : "video.generate";
   const active = await getActivePrompt(db, purpose);
   if (!active) throw new Error(`No active ${purpose} prompt`);
   const workspaceId = await resolveWorkspaceId(db);
-  const { id: jobId } = await enqueueJob(db, {
-    workspaceId,
-    idempotencyKey: randomUUID(),
-    kind: input.kind === "keyframe" ? "image" : "video",
-    input: { templateId: active.templateId, variables: { prompt: input.prompt }, params: {} },
-  });
-  const [step] = await db
+  const [insertedStep] = await db
     .insert(generationSteps)
     .values({
       shotId: input.shotId,
       kind: input.kind,
       status: "queued",
-      jobId,
       input: { prompt: input.prompt },
     })
-    .returning({ id: generationSteps.id });
-  return step.id;
+    .onConflictDoNothing({
+      target: [generationSteps.shotId, generationSteps.kind],
+    })
+    .returning({
+      id: generationSteps.id,
+      status: generationSteps.status,
+      jobId: generationSteps.jobId,
+      updatedAt: generationSteps.updatedAt,
+    });
+
+  const [step] = insertedStep
+    ? [insertedStep]
+    : await db
+        .select({
+          id: generationSteps.id,
+          status: generationSteps.status,
+          jobId: generationSteps.jobId,
+          updatedAt: generationSteps.updatedAt,
+        })
+        .from(generationSteps)
+        .where(and(eq(generationSteps.shotId, input.shotId), eq(generationSteps.kind, input.kind)));
+  if (!step) throw new Error("Generation step could not be created");
+
+  if (!insertedStep && step.jobId && step.status !== "failed") {
+    return { stepId: step.id, reused: true };
+  }
+
+  const attemptKey = step.jobId ? `retry-${step.updatedAt.toISOString()}` : "initial";
+  const { id: jobId, created } = await enqueueJob(db, {
+    workspaceId,
+    idempotencyKey: `shot:${input.shotId}:${input.kind}:${step.id}:${attemptKey}`,
+    kind: input.kind === "keyframe" ? "image" : "video",
+    input: { templateId: active.templateId, variables: { prompt: input.prompt }, params: {} },
+  });
+  await db
+    .update(generationSteps)
+    .set({ status: "queued", jobId, input: { prompt: input.prompt }, updatedAt: new Date() })
+    .where(eq(generationSteps.id, step.id));
+  return { stepId: step.id, reused: !created };
 }
 
 export async function generateShotKeyframe(
@@ -54,15 +75,9 @@ export async function generateShotKeyframe(
 ): Promise<{ stepId: string; reused: boolean }> {
   const [shot] = await db.select().from(shots).where(eq(shots.id, input.shotId));
   if (!shot) throw new Error("Shot not found");
-  const existing = await db
-    .select()
-    .from(generationSteps)
-    .where(and(eq(generationSteps.shotId, input.shotId), eq(generationSteps.kind, "keyframe")));
-  const succeeded = existing.find((s) => s.status === "succeeded");
-  if (succeeded) return { stepId: succeeded.id, reused: true };
   const data = shot.data as { imagePrompt?: string };
   const prompt = data.imagePrompt || "a cinematic frame";
-  return { stepId: await enqueueStep(db, { shotId: input.shotId, kind: "keyframe", prompt }), reused: false };
+  return enqueueStep(db, { shotId: input.shotId, kind: "keyframe", prompt });
 }
 
 export async function generateShotVideo(
@@ -71,19 +86,15 @@ export async function generateShotVideo(
 ): Promise<{ stepId: string; reused: boolean }> {
   const [shot] = await db.select().from(shots).where(eq(shots.id, input.shotId));
   if (!shot) throw new Error("Shot not found");
-  const existing = await db
-    .select()
-    .from(generationSteps)
-    .where(and(eq(generationSteps.shotId, input.shotId), eq(generationSteps.kind, "video")));
-  const succeeded = existing.find((s) => s.status === "succeeded");
-  if (succeeded) return { stepId: succeeded.id, reused: true };
   const data = shot.data as { videoPrompt?: string };
   const prompt = data.videoPrompt || "a cinematic shot";
-  return { stepId: await enqueueStep(db, { shotId: input.shotId, kind: "video", prompt }), reused: false };
+  return enqueueStep(db, { shotId: input.shotId, kind: "video", prompt });
 }
 
 export async function syncStepStatus(db: Db, step: typeof generationSteps.$inferSelect) {
-  if (step.status === "succeeded" || step.status === "failed") return step.status;
+  if (step.status === "succeeded" || step.status === "failed" || step.status === "cancelled") {
+    return step.status;
+  }
   if (!step.jobId) return step.status;
   const [job] = await db.select().from(jobs).where(eq(jobs.id, step.jobId));
   if (!job) return step.status;
@@ -100,6 +111,13 @@ export async function syncStepStatus(db: Db, step: typeof generationSteps.$infer
       .set({ status: "failed", updatedAt: new Date() })
       .where(eq(generationSteps.id, step.id));
     return "failed";
+  }
+  if (job.status === "cancelled") {
+    await db
+      .update(generationSteps)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(eq(generationSteps.id, step.id));
+    return "cancelled";
   }
   return job.status === "running" ? "running" : "queued";
 }
