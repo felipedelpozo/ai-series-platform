@@ -588,14 +588,31 @@ export default function SeriesPage() {
                 </div>
 
                 <Tabs key={selected.id} defaultValue="bible" className="min-w-0">
-                  <TabsList aria-label="Series production sections">
-                    <TabsTrigger value="bible">Bible</TabsTrigger>
-                    <TabsTrigger value="entities">Entities</TabsTrigger>
-                    <TabsTrigger value="story-state">Story State</TabsTrigger>
-                    <TabsTrigger value="plans">Plans</TabsTrigger>
-                    <TabsTrigger value="decisions">Decisions</TabsTrigger>
-                    <TabsTrigger value="loops">Loops</TabsTrigger>
-                    <TabsTrigger value="tiktok">TikTok</TabsTrigger>
+                  <TabsList
+                    aria-label="Series production sections"
+                    className="grid h-auto w-full max-w-none grid-cols-2 overflow-visible sm:grid-cols-4 xl:grid-cols-7"
+                  >
+                    <TabsTrigger value="bible" className="w-full">
+                      Bible
+                    </TabsTrigger>
+                    <TabsTrigger value="entities" className="w-full">
+                      Entities
+                    </TabsTrigger>
+                    <TabsTrigger value="story-state" className="w-full">
+                      Story State
+                    </TabsTrigger>
+                    <TabsTrigger value="plans" className="w-full">
+                      Plans
+                    </TabsTrigger>
+                    <TabsTrigger value="decisions" className="w-full">
+                      Decisions
+                    </TabsTrigger>
+                    <TabsTrigger value="loops" className="w-full">
+                      Loops
+                    </TabsTrigger>
+                    <TabsTrigger value="tiktok" className="w-full">
+                      TikTok
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="bible" className="min-w-0 space-y-6">

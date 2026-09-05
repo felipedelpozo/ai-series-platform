@@ -38,7 +38,7 @@ No domain, API, persistence, authentication, authorization or production-workflo
 | Repository test command                  | PASS        | `bun run test`: 106 passed, 26 skipped, 0 failed, 588 assertions. Skips are opt-in/live integration cases without their external environment.                          |
 | Typecheck                                | PASS        | All workspaces.                                                                                                                                                        |
 | Lint                                     | PASS        | All workspaces.                                                                                                                                                        |
-| Build                                    | PASS        | Web and worker. Five inherited warnings remain: two Edge-runtime instrumentation warnings and three dynamic filesystem tracing warnings in composition.                |
+| Build                                    | PASS        | Web and worker. The Edge-runtime instrumentation warnings are resolved; three inherited dynamic filesystem tracing warnings remain in composition.                     |
 | Migration validation                     | PASS        | `bun run db:migrate` completed; existing schema/table notices only.                                                                                                    |
 | Changed-file formatting                  | PASS        | Prettier check over all Feature 028 changed files.                                                                                                                     |
 | Global formatting                        | BLOCK       | `bun run format:check` reports 135 inherited files outside the Feature 028 diff. No unrelated files were rewritten.                                                    |
@@ -59,4 +59,10 @@ Both were corrected. Focused browser evidence now verifies a static reduced-moti
 
 The branch preserves the exact four-commit Feature 027 stack ending at `79bd1d6`. Immediately before delivery, upstream PR [#31](https://github.com/felipedelpozo/ai-series-platform/pull/31) remained open against `develop`, so Feature 028 was pushed and opened as stacked PR [#32](https://github.com/felipedelpozo/ai-series-platform/pull/32) against `codex/027-launcher-prompts-follow-up`.
 
-No merge or deployment is part of this delivery. Remaining risks are inherited repository formatting debt and the five pre-existing build warnings described above.
+No merge or deployment is part of this delivery. Remaining risks are inherited repository formatting debt and the three pre-existing composition build warnings described above.
+
+## Post-delivery runtime correction
+
+The live verification exposed that the shared `instrumentation.ts` entrypoint imported `dotenv` and `node:path` at module scope. Next.js also compiles that entrypoint for Edge, so development and production builds emitted unsupported Node API warnings. The Node-only startup validation and prompt seeding now live in `instrumentation.node.ts`, loaded only when `NEXT_RUNTIME` is `nodejs`, following the installed Next.js 16 guidance. A source-boundary regression test, lint, typecheck, production build and live `/series` plus `/api/series` checks all pass without the two Edge warnings.
+
+Browser review also identified horizontal scrolling in the Series production-section tabs. That route now uses a full-width responsive grid: seven visible columns on wide screens and wrapped rows at narrower breakpoints. The tab list keeps its Radix keyboard semantics while browser coverage asserts that `scrollWidth` never exceeds `clientWidth` and horizontal overflow is neither `auto` nor `scroll` at 375, 768 and 1440 px.
