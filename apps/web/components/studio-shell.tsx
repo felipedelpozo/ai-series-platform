@@ -19,18 +19,17 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-svh bg-background lg:grid lg:grid-cols-[auto_minmax(0,1fr)]">
+    <div className="min-h-svh bg-muted/30 lg:grid lg:grid-cols-[auto_minmax(0,1fr)]">
       <aside
-        className={`sticky top-0 hidden h-svh shrink-0 overflow-hidden border-r border-sidebar-border transition-[width] duration-200 lg:block ${collapsed ? "w-[4.5rem]" : "w-64"}`}
+        className={`sticky top-0 hidden h-svh shrink-0 overflow-hidden p-2 pr-0 transition-[width] duration-200 lg:block ${collapsed ? "w-20" : "w-[16.5rem]"}`}
       >
-        <AppSidebar collapsed={collapsed} />
+        <div className="h-full overflow-hidden rounded-lg border bg-background">
+          <AppSidebar collapsed={collapsed} />
+        </div>
       </aside>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileNavigationOpen}>
-        <SheetContent
-          side="left"
-          className="w-[min(20rem,88vw)] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
-        >
+        <SheetContent side="left" className="w-[min(20rem,88vw)] bg-background p-0 text-foreground">
           <SheetHeader className="sr-only">
             <SheetTitle>Studio navigation</SheetTitle>
             <SheetDescription>Open another production area.</SheetDescription>
@@ -39,7 +38,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
         </SheetContent>
       </Sheet>
 
-      <div className="min-w-0">
+      <div className="min-w-0 bg-background lg:my-2 lg:mr-2 lg:min-h-[calc(100svh-1rem)] lg:overflow-clip lg:rounded-lg lg:border">
         <AppHeader
           collapsed={collapsed}
           menuButtonRef={mobileTriggerRef}

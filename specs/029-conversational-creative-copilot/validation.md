@@ -12,9 +12,9 @@
 | Repository formatting     | BLOCK       | `bun run format:check` reports 126 pre-existing, unmodified files. No Feature 029 file is in that list.                                                           |
 | Typecheck                 | PASS        | Root `bun run typecheck`, including web, worker and every package.                                                                                                |
 | Lint                      | PASS        | Root `bun run lint`.                                                                                                                                              |
-| Deterministic suite       | PASS        | PostgreSQL-enabled run: 258 passed, 2 skipped, 0 failed, 1,026 assertions across 62 files.                                                                        |
+| Deterministic suite       | PASS        | Post-merge PostgreSQL-enabled run: 279 passed, 2 skipped, 0 failed, 1,111 assertions across 65 files.                                                             |
 | Production build          | PASS        | Next.js web build and Bun worker build completed.                                                                                                                 |
-| Browser acceptance        | PASS        | 80 Playwright tests passed with one Chromium worker.                                                                                                              |
+| Browser acceptance        | PASS        | Post-merge combined Feature 028/029 matrix: 43 Playwright tests passed with one Chromium worker.                                                                  |
 | Migration                 | PASS        | Migration 0024 applies from empty and current schema; composite tenant constraints, immutable history and rollback are exercised by PostgreSQL integration tests. |
 | Independent review        | PASS        | Final specification/architecture review: 0 BLOCKER, 0 HIGH. Final security review: 0 BLOCKER, 0 HIGH.                                                             |
 | Real OpenAI smoke         | UNAVAILABLE | `OPENAI_API_KEY` is not configured. No external request or credit spend occurred.                                                                                 |
@@ -58,17 +58,29 @@ Evidence: copilot cost unit/integration tests, PostgreSQL paid-work gate, genera
 
 Evidence: loader projection tests, PostgreSQL recovery integration, `copilot-recovery.spec.ts` and the complete `studio-ui.spec.ts` matrix.
 
+## Post-merge verification
+
+After Feature 028 landed on `origin/develop`, it was merged into the Feature 029 branch. Conflict resolution preserved the 029 tenant-aware transactional primitives and Copilot navigation while adding the 028 prompt-detail helpers, canonical entity context, shared Motion layout and refreshed Studio surfaces.
+
+- `bun install --frozen-lockfile`: PASS; `motion/react` resolves from its owning `@ai-series/ui` workspace.
+- Focused Series/Entities/Planner/UI suite: 35 passed, 0 failed.
+- Root typecheck and lint: PASS.
+- PostgreSQL-enabled deterministic suite: 279 passed, 2 opt-in provider skips, 0 failed.
+- Production web/worker build: PASS.
+- Combined Copilot and refreshed Studio Playwright matrix: 43 passed.
+- `git diff --check`: PASS.
+
 ## Quickstart scenario matrix
 
-| Quickstart scenario               | Result | Automated evidence                                                                        |
-| --------------------------------- | ------ | ----------------------------------------------------------------------------------------- |
-| Query without mutation            | PASS   | Viewer fallback, grounding, provider denial, no mutation.                                 |
-| Series and first episode proposal | PASS   | Quote/cancel/confirm, structured diff, explicit approval, atomic apply and links.         |
-| Stale and transactional safety    | PASS   | Base/role revalidation, rollback and concurrent StoryState test.                          |
-| Replay and reconciliation         | PASS   | Ten-way decision/apply/start replay and lost-response receipt/job reuse.                  |
-| Separate cost gate                | PASS   | Exact scope/dependency/expiry/quota checks and one reservation/job.                       |
-| Adversarial isolation             | PASS   | Uniform non-enumerating errors, IDOR, prompt injection, CSRF, rate limit and tenant FKs.  |
-| Responsive and accessible UI      | PASS   | 80 browser tests including Feature 029 and inherited Studio accessibility/responsiveness. |
+| Quickstart scenario               | Result | Automated evidence                                                                                  |
+| --------------------------------- | ------ | --------------------------------------------------------------------------------------------------- |
+| Query without mutation            | PASS   | Viewer fallback, grounding, provider denial, no mutation.                                           |
+| Series and first episode proposal | PASS   | Quote/cancel/confirm, structured diff, explicit approval, atomic apply and links.                   |
+| Stale and transactional safety    | PASS   | Base/role revalidation, rollback and concurrent StoryState test.                                    |
+| Replay and reconciliation         | PASS   | Ten-way decision/apply/start replay and lost-response receipt/job reuse.                            |
+| Separate cost gate                | PASS   | Exact scope/dependency/expiry/quota checks and one reservation/job.                                 |
+| Adversarial isolation             | PASS   | Uniform non-enumerating errors, IDOR, prompt injection, CSRF, rate limit and tenant FKs.            |
+| Responsive and accessible UI      | PASS   | 43 post-merge browser tests covering Feature 029 and refreshed Studio accessibility/responsiveness. |
 
 ## Known baseline warnings
 

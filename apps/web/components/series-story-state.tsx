@@ -146,7 +146,7 @@ export function SeriesStoryState({ seriesId }: { seriesId: string }) {
                     aria-hidden="true"
                   />
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-mono text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground tabular-nums">
                       Version {entry.version}
                     </span>
                     <StatusBadge status={entry.kind} />

@@ -13,20 +13,83 @@ import {
 import { studioMutation } from "@/lib/studio-mutation";
 
 type Entity = { id: string; type: string; name: string };
-type Version = { id: string; version: number; isActive: boolean; source: string; name: string };
+type Version = {
+  id: string;
+  version: number;
+  isActive: boolean;
+  source: string;
+  name: string;
+  data: Record<string, unknown>;
+};
 type Sheet = { id: string; status: string; asset: { url: string } | null };
 
-export function SeriesEntities({ seriesId }: { seriesId: string }) {
+function fieldLabel(value: string): string {
+  return value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (character) => character.toUpperCase());
+}
+
+function EntityField({ label, value }: { label: string; value: unknown }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium text-muted-foreground">{fieldLabel(label)}</dt>
+      <dd className="mt-1 text-sm">
+        {Array.isArray(value) ? (
+          value.length > 0 ? (
+            <ul className="list-disc space-y-1 pl-5">
+              {value.map((item, index) => (
+                <li key={`${index}-${String(item)}`}>{String(item)}</li>
+              ))}
+            </ul>
+          ) : (
+            "—"
+          )
+        ) : typeof value === "object" && value !== null ? (
+          <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-muted p-2 font-mono text-xs">
+            {JSON.stringify(value, null, 2)}
+          </pre>
+        ) : (
+          String(value ?? "—")
+        )}
+      </dd>
+    </div>
+  );
+}
+
+function EntityVersionData({ data }: { data: Record<string, unknown> }) {
+  const fields = Object.entries(data);
+  if (fields.length === 0) {
+    return <p className="text-xs text-muted-foreground">No details in this version.</p>;
+  }
+
+  return (
+    <dl className="grid gap-3 sm:grid-cols-2">
+      {fields.map(([key, value]) => (
+        <EntityField key={key} label={key} value={value} />
+      ))}
+    </dl>
+  );
+}
+
+export function SeriesEntities({
+  seriesId,
+  onEntitiesChanged,
+}: {
+  seriesId: string;
+  onEntitiesChanged?: () => void;
+}) {
   const [type, setType] = useState("character");
   const [entities, setEntities] = useState<Entity[]>([]);
   const [name, setName] = useState("");
   const [dataJson, setDataJson] = useState("{}");
   const [versions, setVersions] = useState<Record<string, Version[]>>({});
   const [sheets, setSheets] = useState<Record<string, Sheet[]>>({});
+  const [entityDetails, setEntityDetails] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const loadRequestRef = useRef(0);
+  const generationActionRef = useRef(new Set<string>());
   const sheetActionRef = useRef(new Set<string>());
   const sheetAttemptRef = useRef(new Map<string, string>());
 
@@ -74,6 +137,7 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
       setName("");
       setDataJson("{}");
       await load();
+      onEntitiesChanged?.();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create entity");
     } finally {
@@ -102,11 +166,15 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
   }
 
   async function generate(entityId: string) {
+    if (generationActionRef.current.has(entityId)) return;
+    generationActionRef.current.add(entityId);
     setBusyAction(`generate:${entityId}`);
     setError(null);
     try {
       const res = await studioMutation("entities.generate", `/api/entities/${entityId}/generate`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ details: entityDetails[entityId] ?? "" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
@@ -114,11 +182,12 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
     } catch (generationError) {
       setError(generationError instanceof Error ? generationError.message : "Generation failed");
     } finally {
+      generationActionRef.current.delete(entityId);
       setBusyAction(null);
     }
   }
 
-  async function activate(versionId: string) {
+  async function activate(versionId: string, entityId: string) {
     setBusyAction(`activate:${versionId}`);
     setError(null);
     try {
@@ -128,7 +197,7 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
         { method: "POST" },
       );
       if (!res.ok) throw new Error("Failed to activate version");
-      await load();
+      await open(entityId);
     } catch (activationError) {
       setError(
         activationError instanceof Error ? activationError.message : "Failed to activate version",
@@ -273,13 +342,15 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
 
         {loading ? (
           <LoadingSkeleton rows={2} />
-        ) : error ? null : entities.length === 0 ? (
-          <EmptyState
-            icon={Boxes}
-            title={`No ${type}s yet`}
-            description="Create the first entity to establish a reusable continuity reference for this series."
-            compact
-          />
+        ) : entities.length === 0 ? (
+          error ? null : (
+            <EmptyState
+              icon={Boxes}
+              title={`No ${type}s yet`}
+              description="Create the first entity to establish a reusable continuity reference for this series."
+              compact
+            />
+          )
         ) : (
           <ul className="grid gap-3 xl:grid-cols-2" aria-label={`${type} entities`}>
             {entities.map((entity) => {
@@ -287,7 +358,7 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
               const entitySheets = sheets[entity.id] ?? [];
               const isOpening = busyAction === `open:${entity.id}`;
               return (
-                <li key={entity.id} className="min-w-0 rounded-xl border bg-card p-4 shadow-xs">
+                <li key={entity.id} className="min-w-0 rounded-lg border bg-card p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{entity.name}</p>
@@ -307,15 +378,6 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => generate(entity.id)}
-                        disabled={busyAction !== null}
-                      >
-                        {busyAction === `generate:${entity.id}` ? "Generating…" : "Generate (AI)"}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
                         onClick={() => generateSheet(entity.id)}
                         disabled={busyAction !== null}
                       >
@@ -324,35 +386,82 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
                     </div>
                   </div>
 
+                  <div className="mt-4 space-y-3 rounded-lg border bg-muted/20 p-3">
+                    <div className="space-y-2">
+                      <Label htmlFor={`entity-details-${entity.id}`}>
+                        Details for AI{" "}
+                        <span className="font-normal text-muted-foreground">(optional)</span>
+                      </Label>
+                      <Textarea
+                        id={`entity-details-${entity.id}`}
+                        value={entityDetails[entity.id] ?? ""}
+                        onChange={(event) =>
+                          setEntityDetails((current) => ({
+                            ...current,
+                            [entity.id]: event.target.value,
+                          }))
+                        }
+                        rows={3}
+                        maxLength={4000}
+                        placeholder={`Describe the ${entity.type}'s role, appearance, personality, environment, visual references, state or any constraints the AI should follow.`}
+                        aria-describedby={`entity-details-${entity.id}-help`}
+                        disabled={busyAction !== null}
+                      />
+                    </div>
+                    <div
+                      id={`entity-details-${entity.id}-help`}
+                      className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"
+                    >
+                      <p>Included in this generation and recorded in its prompt snapshot.</p>
+                      <span className="tabular-nums">
+                        {(entityDetails[entity.id] ?? "").length}/4000
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => generate(entity.id)}
+                      disabled={busyAction !== null}
+                    >
+                      {busyAction === `generate:${entity.id}` ? "Generating…" : "Generate with AI"}
+                    </Button>
+                  </div>
+
                   {entityVersions.length > 0 ? (
                     <div className="mt-4 border-t pt-3">
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Versions
-                      </p>
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">Versions</p>
                       <ul className="space-y-2">
                         {entityVersions.map((version) => (
-                          <li
-                            key={version.id}
-                            className="flex min-w-0 items-center justify-between gap-3 text-sm"
-                          >
-                            <span className="min-w-0 truncate text-muted-foreground">
-                              v{version.version} · {version.source}
-                            </span>
-                            {version.isActive ? (
-                              <StatusBadge status="active" />
-                            ) : (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => activate(version.id)}
-                                disabled={busyAction !== null}
-                              >
-                                {busyAction === `activate:${version.id}`
-                                  ? "Activating…"
-                                  : "Activate"}
-                              </Button>
-                            )}
+                          <li key={version.id} className="min-w-0 rounded-lg border bg-muted/20">
+                            <div className="flex min-w-0 items-center justify-between gap-3 px-3 py-2 text-sm">
+                              <span className="min-w-0 truncate text-muted-foreground">
+                                v{version.version} · {version.source}
+                              </span>
+                              {version.isActive ? (
+                                <StatusBadge status="active" />
+                              ) : (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => activate(version.id, entity.id)}
+                                  disabled={busyAction !== null}
+                                >
+                                  {busyAction === `activate:${version.id}`
+                                    ? "Activating…"
+                                    : "Activate"}
+                                </Button>
+                              )}
+                            </div>
+                            <details open={version.isActive} className="border-t bg-background/70">
+                              <summary className="flex min-h-10 cursor-pointer items-center px-3 py-2 text-xs font-medium text-muted-foreground outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring">
+                                Full version details
+                              </summary>
+                              <div className="border-t p-3">
+                                <EntityVersionData data={version.data} />
+                              </div>
+                            </details>
                           </li>
                         ))}
                       </ul>
@@ -361,57 +470,67 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
 
                   {entitySheets.length > 0 ? (
                     <div className="mt-4 border-t pt-3">
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">
                         Reference sheets
                       </p>
                       <ul className="space-y-3">
                         {entitySheets.map((sheet) => (
                           <li
                             key={sheet.id}
-                            className="flex min-w-0 flex-col gap-3 rounded-lg bg-muted/35 p-3 sm:flex-row sm:items-center"
+                            className="flex min-w-0 flex-col gap-3 rounded-lg bg-muted/35 p-3"
                           >
                             {sheet.asset ? (
-                              <img
-                                src={sheet.asset.url}
-                                alt={`${entity.name} reference sheet`}
-                                className="size-14 shrink-0 rounded-md border object-cover"
-                              />
+                              <a
+                                href={sheet.asset.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="group relative block w-full overflow-hidden rounded-md border bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                <img
+                                  src={sheet.asset.url}
+                                  alt={`${entity.name} reference sheet`}
+                                  className="max-h-64 w-full object-contain"
+                                />
+                                <span className="absolute bottom-2 right-2 rounded-md bg-background/90 px-2 py-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                                  Open full size
+                                </span>
+                              </a>
                             ) : (
-                              <div className="grid size-14 shrink-0 place-items-center rounded-md border border-dashed text-[0.625rem] text-muted-foreground">
+                              <div className="grid min-h-32 place-items-center rounded-md border border-dashed text-xs text-muted-foreground">
                                 No preview
                               </div>
                             )}
-                            <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
                               <StatusBadge status={sheet.status} />
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => sheetStatus(sheet.id, "approved", entity.id)}
-                                disabled={busyAction !== null}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => sheetStatus(sheet.id, "rejected", entity.id)}
-                                disabled={busyAction !== null}
-                              >
-                                Reject
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => promote(sheet.id, entity.id)}
-                                disabled={busyAction !== null}
-                              >
-                                Promote
-                              </Button>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => sheetStatus(sheet.id, "approved", entity.id)}
+                                  disabled={busyAction !== null}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => sheetStatus(sheet.id, "rejected", entity.id)}
+                                  disabled={busyAction !== null}
+                                >
+                                  Reject
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => promote(sheet.id, entity.id)}
+                                  disabled={busyAction !== null}
+                                >
+                                  Promote
+                                </Button>
+                              </div>
                             </div>
                           </li>
                         ))}

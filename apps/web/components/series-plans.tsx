@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Clapperboard } from "lucide-react";
-import { Button, Input, Label } from "@ai-series/ui";
+import { Button, Input, Label, Textarea } from "@ai-series/ui";
 import {
   EmptyState,
   InlineNotice,
@@ -20,6 +20,21 @@ type Plan = {
   status: string;
   source: string;
   isActive: boolean;
+  data: {
+    hook?: string;
+    dramaticGoal?: string;
+    beats?: string[];
+    targetDuration?: string;
+    characterIds?: string[];
+    locationIds?: string[];
+    propIds?: string[];
+    reveals?: string[];
+    requiredContinuity?: string[];
+    closing?: string;
+    cliffhanger?: string;
+    audienceQuestion?: string | null;
+    proposedStoryStateAfter?: Record<string, unknown>;
+  };
 };
 
 type Scene = {
@@ -34,16 +49,113 @@ type Progress = {
   shotsWithVideo: number;
   totalShots: number;
 };
+type Entity = { id: string; name: string };
 
-export function SeriesPlans({ seriesId }: { seriesId: string }) {
+function PlanTextField({ label, value }: { label: string; value: unknown }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className="mt-1 whitespace-pre-wrap text-sm">{String(value ?? "—")}</dd>
+    </div>
+  );
+}
+
+function PlanListField({
+  label,
+  values,
+  resolve,
+}: {
+  label: string;
+  values: string[];
+  resolve?: (value: string) => string;
+}) {
+  return (
+    <div>
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-sm">
+        {values.length > 0 ? (
+          <ul className="list-disc space-y-1 pl-5">
+            {values.map((value, index) => (
+              <li key={`${index}-${value}`}>{resolve ? resolve(value) : value}</li>
+            ))}
+          </ul>
+        ) : (
+          "—"
+        )}
+      </dd>
+    </div>
+  );
+}
+
+function PlanDetails({
+  data,
+  entityNames,
+}: {
+  data: Plan["data"];
+  entityNames: Record<string, string>;
+}) {
+  const nameOf = (id: string) => entityNames[id] ?? id;
+  const hasContent = Object.values(data).some((value) => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (value && typeof value === "object") return Object.keys(value).length > 0;
+    return Boolean(value);
+  });
+
+  if (!hasContent) {
+    return <p className="text-xs text-muted-foreground">No details in this plan.</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <dl className="grid gap-3 sm:grid-cols-2">
+        <PlanTextField label="Hook" value={data.hook} />
+        <PlanTextField label="Dramatic goal" value={data.dramaticGoal} />
+        <PlanTextField label="Target duration" value={data.targetDuration} />
+        <PlanTextField label="Audience question" value={data.audienceQuestion} />
+        <PlanTextField label="Closing" value={data.closing} />
+        <PlanTextField label="Cliffhanger" value={data.cliffhanger} />
+      </dl>
+      <dl className="grid gap-3 sm:grid-cols-2">
+        <PlanListField label="Beats" values={data.beats ?? []} />
+        <PlanListField label="Reveals" values={data.reveals ?? []} />
+        <PlanListField label="Required continuity" values={data.requiredContinuity ?? []} />
+        <PlanListField label="Characters" values={data.characterIds ?? []} resolve={nameOf} />
+        <PlanListField label="Locations" values={data.locationIds ?? []} resolve={nameOf} />
+        <PlanListField label="Props" values={data.propIds ?? []} resolve={nameOf} />
+      </dl>
+      {data.proposedStoryStateAfter ? (
+        <details className="rounded-md border bg-muted/20">
+          <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring">
+            Proposed story state after
+          </summary>
+          <pre className="overflow-x-auto whitespace-pre-wrap border-t bg-background p-3 font-mono text-xs">
+            {JSON.stringify(data.proposedStoryStateAfter, null, 2)}
+          </pre>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
+export function SeriesPlans({
+  seriesId,
+  onPlansChanged,
+}: {
+  seriesId: string;
+  onPlansChanged?: () => void;
+}) {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [entityNames, setEntityNames] = useState<Record<string, string>>({});
   const [episode, setEpisode] = useState(1);
+  const [details, setDetails] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scenes, setScenes] = useState<Record<string, Scene[]>>({});
   const [progress, setProgress] = useState<Record<string, Progress>>({});
   const loadRequestRef = useRef(0);
+  const entityRequestRef = useRef(0);
+  const planGenerationRef = useRef(false);
 
   const load = useCallback(async () => {
     const request = ++loadRequestRef.current;
@@ -72,21 +184,46 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
     };
   }, [load]);
 
+  useEffect(() => {
+    const request = ++entityRequestRef.current;
+    void fetch(`/api/entities?seriesId=${seriesId}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (request !== entityRequestRef.current) return;
+        const nextNames: Record<string, string> = {};
+        for (const entity of (data.entities ?? []) as Entity[]) {
+          nextNames[entity.id] = entity.name;
+        }
+        setEntityNames(nextNames);
+      })
+      .catch(() => {
+        if (request === entityRequestRef.current) setEntityNames({});
+      });
+
+    return () => {
+      entityRequestRef.current += 1;
+    };
+  }, [seriesId]);
+
   async function generate() {
+    if (planGenerationRef.current) return;
+    planGenerationRef.current = true;
     setBusyAction("generate-plan");
     setError(null);
     try {
       const res = await studioMutation("plans.create", `/api/series/${seriesId}/plans`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ episodeNumber: episode }),
+        body: JSON.stringify({ episodeNumber: episode, details }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
       await load();
+      onPlansChanged?.();
     } catch (generationError) {
       setError(generationError instanceof Error ? generationError.message : "Generation failed");
     } finally {
+      planGenerationRef.current = false;
       setBusyAction(null);
     }
   }
@@ -162,7 +299,7 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
       description="Develop each episode from plan approval through scenes, keyframes and video."
     >
       <div className="space-y-5" aria-busy={busyAction !== null}>
-        <div className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
           <div className="w-full space-y-2 sm:max-w-40">
             <Label htmlFor="plan-episode-number">Episode number</Label>
             <Input
@@ -174,12 +311,30 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
               disabled={busyAction !== null}
             />
           </div>
-          <Button
-            type="button"
-            onClick={generate}
-            disabled={busyAction !== null}
-            className="w-full sm:w-auto"
+          <div className="space-y-2">
+            <Label htmlFor="episode-details">
+              Episode details for AI{" "}
+              <span className="font-normal text-muted-foreground">(optional)</span>
+            </Label>
+            <Textarea
+              id="episode-details"
+              value={details}
+              onChange={(event) => setDetails(event.target.value)}
+              rows={3}
+              maxLength={4000}
+              placeholder="Describe the plot, tone, characters, locations, conflicts, reveals or any constraints the AI should follow for this episode."
+              aria-describedby="episode-details-help"
+              disabled={busyAction !== null}
+            />
+          </div>
+          <div
+            id="episode-details-help"
+            className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"
           >
+            <p>Included in this generation and recorded in its immutable prompt snapshot.</p>
+            <span className="tabular-nums">{details.length}/4000</span>
+          </div>
+          <Button type="button" onClick={generate} disabled={busyAction !== null}>
             {busyAction === "generate-plan" ? "Generating plan…" : "Generate plan (AI)"}
           </Button>
         </div>
@@ -210,7 +365,7 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
               const planScenes = scenes[plan.id];
               const planProgress = progress[plan.id];
               return (
-                <li key={plan.id} className="min-w-0 rounded-xl border bg-card p-4 shadow-xs">
+                <li key={plan.id} className="min-w-0 rounded-lg border bg-card p-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -268,9 +423,18 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
                     </div>
                   </div>
 
+                  <details open={plan.isActive} className="mt-4 rounded-lg border bg-muted/20">
+                    <summary className="flex min-h-10 cursor-pointer items-center px-3 py-2 text-xs font-medium text-muted-foreground outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring">
+                      Full plan details
+                    </summary>
+                    <div className="border-t bg-background/70 p-4">
+                      <PlanDetails data={plan.data} entityNames={entityNames} />
+                    </div>
+                  </details>
+
                   {planScenes ? (
                     <div className="mt-4 border-t pt-4">
-                      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <p className="mb-3 text-xs font-medium text-muted-foreground">
                         Scene sequence
                       </p>
                       {planScenes.length === 0 ? (
@@ -300,13 +464,13 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
                     <div className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-3">
                       <div>
                         <p className="text-xs text-muted-foreground">Keyframes</p>
-                        <p className="mt-1 font-mono text-sm">
+                        <p className="mt-1 text-sm tabular-nums">
                           {planProgress.shotsWithKeyframe}/{planProgress.totalShots}
                         </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Videos</p>
-                        <p className="mt-1 font-mono text-sm">
+                        <p className="mt-1 text-sm tabular-nums">
                           {planProgress.shotsWithVideo}/{planProgress.totalShots}
                         </p>
                       </div>

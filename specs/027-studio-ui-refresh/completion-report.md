@@ -2,10 +2,15 @@
 
 ## Outcome
 
-The existing studio has been rebuilt as a responsive editorial production desk using the shared
+The existing studio has been rebuilt as a responsive production workspace using the shared
 shadcn/Radix foundation. All existing destinations remain available, production state is visually
-dominant, light/dark themes and reduced motion are supported, and the continuity line is reserved
-for real ordered production sequences.
+dominant, and light/dark themes and reduced motion are supported. Following launcher review, the
+warm editorial layer was replaced by native neutral shadcn tokens and Geist typography. `/series`
+now uses a bounded card grid, a full-width selected workspace and a factual canonical setup rail.
+
+The recent creator-supplied generation details for Bible, Entity and Episode Plan were also
+restored from their source change and integrated semantically with this branch. They retain exact
+payloads and local input on failure, and Entity/Plan now share Bible's synchronous duplicate guard.
 
 No route, permission, database schema or product capability was added. The only behavior hardening
 outside view code is the compatible idempotency path recorded in Clarifications: active paid jobs
@@ -32,17 +37,29 @@ heading hierarchy, focus/touch sizes, light-theme status contrast, destructive a
 canonical Bible activation races, Episode Studio shot/preview races, QA per-finding locks, and paid
 job deduplication for Shot Graph, Generation Lab and reference sheets.
 
+The launcher follow-up review additionally caught an inferred workflow state, duplicated summary
+state, an undersized tab target and dark-theme destructive contrast. The final implementation uses
+only factual present/missing/unavailable setup data, refreshes the summary after entity/plan
+creation, restores 40 px tab targets and uses adaptive destructive foreground contrast.
+
+The final architecture pass also found that a non-canonical historical entity type could break
+episode context grouping. Entity types are now validated at the HTTP boundary, filtered again when
+read from persistence and ignored defensively by the planner. Malformed non-empty JSON is rejected
+instead of silently triggering default generation, while the compatible empty-body behavior is
+preserved.
+
 Final functional accessibility/security review: **0 BLOCKER / 0 HIGH**. Remaining review discussion
 was about the chosen layered evidence strategy; that strategy is now explicit in the feature
 Clarifications and quickstart rather than being implied by an impractical all-mutations E2E suite.
 
 ## Final validation
 
-- `bun run test`: **PASS** — 101 passed, 2 opt-in paid fal.ai smoke tests skipped, 0 failed.
+- `bun run test`: **PASS** — 118 passed, 2 opt-in paid fal.ai smoke tests skipped, 0 failed.
 - `bun run typecheck`: **PASS** across all packages, web and worker.
 - `bun run lint`: **PASS**.
 - `bun run build`: **PASS** for web and worker.
-- Production-build Playwright suite: **PASS** — 69 passed, 0 failed, one worker, fresh server.
+- Production-build Playwright suite: **PASS** — 71 passed, 0 failed, one worker, fresh isolated
+  server with the repository database configuration.
 - PostgreSQL concurrency regressions: **PASS** for identical keys, different concurrent attempt
   tokens, intentional later attempts and reference-sheet job/sheet reuse.
 - Changed-file Prettier check: **PASS**.

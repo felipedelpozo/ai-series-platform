@@ -97,7 +97,7 @@ export function NewPromptForm({ purposes }: { purposes: readonly string[] }) {
             id="new-prompt-purpose"
             value={purpose}
             onChange={(event) => setPurpose(event.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow,border-color] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[color,box-shadow,border-color] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
           >
             {purposes.map((item) => (
               <option key={item} value={item}>

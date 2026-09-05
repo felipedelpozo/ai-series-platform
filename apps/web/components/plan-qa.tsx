@@ -235,11 +235,11 @@ export function PlanQa({ planId }: { planId: string }) {
       ) : null}
 
       {findings.length > 0 ? (
-        <ul className="space-y-2">
+        <ul className="divide-y border-y">
           {findings.map((finding) => {
             const resolving = resolvingIds.has(finding.id);
             return (
-              <li key={finding.id} className="min-w-0 rounded-lg border bg-muted/20 p-3">
+              <li key={finding.id} className="min-w-0 py-4 first:pt-3 last:pb-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="min-w-0 break-words text-sm font-medium">{finding.check}</p>
                   <div className="flex flex-wrap gap-1.5">

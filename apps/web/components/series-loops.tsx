@@ -137,7 +137,7 @@ export function SeriesLoops({ seriesId }: { seriesId: string }) {
       description="Apply approved audience decisions and advance the resulting episode branch in order."
     >
       <div className="space-y-6" aria-busy={busyAction !== null}>
-        <div className="grid gap-4 rounded-xl border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <div className="grid gap-4 rounded-lg border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <div className="space-y-2">
             <Label htmlFor="branch-name">New branch name</Label>
             <Input
@@ -260,10 +260,7 @@ export function SeriesLoops({ seriesId }: { seriesId: string }) {
                   aria-label="Decision timeline"
                 >
                   {loops.map((loop) => (
-                    <li
-                      key={loop.id}
-                      className="relative min-w-0 rounded-xl border bg-card p-4 shadow-xs"
-                    >
+                    <li key={loop.id} className="relative min-w-0 rounded-lg border bg-card p-4">
                       <span
                         className="absolute -left-[1.63rem] top-5 size-2.5 rounded-full border-2 border-background bg-primary"
                         aria-hidden="true"

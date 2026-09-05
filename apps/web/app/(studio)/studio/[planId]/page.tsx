@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Card, CardContent, Label, Textarea, cn } from "@ai-series/ui";
+import { Button, Label, Textarea, cn } from "@ai-series/ui";
 import {
   Clapperboard,
   Download,
@@ -393,7 +393,7 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
   const isBusy = (action: StudioAction) => busyActions.includes(action);
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-5">
       <PageHeader
         eyebrow="Episode studio"
         title="Episode production"
@@ -439,7 +439,7 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
         </InlineNotice>
       ) : null}
 
-      <div className="grid min-w-0 gap-4 lg:min-h-[calc(100svh-15rem)] lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)_minmax(19rem,23rem)]">
+      <div className="grid min-w-0 gap-3 lg:min-h-[calc(100svh-15rem)] lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)_minmax(19rem,23rem)]">
         <SectionPanel
           title="Scenes & shots"
           description={
@@ -460,16 +460,9 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
             {!scenesLoading && scenes.length > 0 ? (
               <ol className="space-y-5">
                 {scenes.map((scene) => (
-                  <li
-                    key={scene.id}
-                    className="relative pl-5 before:absolute before:bottom-[-1.25rem] before:left-[0.3125rem] before:top-3 before:w-px before:bg-border last:before:hidden"
-                  >
-                    <span
-                      className="absolute left-0 top-1.5 size-2.5 rounded-full border-2 border-primary bg-background"
-                      aria-hidden="true"
-                    />
+                  <li key={scene.id} className="min-w-0">
                     <div className="min-w-0">
-                      <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-primary">
+                      <p className="font-mono text-xs font-medium tabular-nums text-foreground">
                         Scene {scene.order + 1}
                       </p>
                       <p className="mt-1 break-words text-sm leading-snug text-muted-foreground">
@@ -487,8 +480,8 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
                                 onClick={() => selectShot(shot)}
                                 aria-pressed={selected}
                                 className={cn(
-                                  "flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
-                                  selected && "border-primary bg-primary/7 shadow-xs",
+                                  "flex min-h-11 w-full items-center justify-between gap-2 rounded-md border border-transparent px-3 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+                                  selected && "border-border bg-muted",
                                 )}
                               >
                                 <span className="min-w-0 truncate text-sm font-medium">
@@ -501,7 +494,7 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
                         })}
                       </ol>
                     ) : (
-                      <p className="mt-3 rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                      <p className="mt-3 border-l-2 border-border px-3 py-1 text-xs text-muted-foreground">
                         This scene has no shots.
                       </p>
                     )}
@@ -521,7 +514,7 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
           }
           className="min-w-0 lg:max-h-[calc(100svh-15rem)]"
         >
-          <div className="flex min-h-72 min-w-0 items-center justify-center overflow-hidden rounded-xl bg-foreground/[0.035] p-3 sm:min-h-96 lg:min-h-[calc(100svh-23rem)]">
+          <div className="flex min-h-72 min-w-0 items-center justify-center overflow-hidden border bg-muted/15 p-3 sm:min-h-96 lg:min-h-[calc(100svh-23rem)]">
             {!selectedShot ? (
               <EmptyState
                 icon={Film}
@@ -556,26 +549,26 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
                 )}
               >
                 {preview.videoAsset ? (
-                  <figure className="min-w-0 overflow-hidden rounded-lg border bg-black">
+                  <figure className="min-w-0 overflow-hidden rounded-md border bg-black">
                     <video
                       src={preview.videoAsset.url}
                       controls
                       className="max-h-[65svh] w-full object-contain"
                       aria-label={`Video preview for shot ${selectedShot.order + 1}`}
                     />
-                    <figcaption className="border-t border-white/10 bg-black px-3 py-2 font-mono text-[0.6875rem] uppercase tracking-wider text-white/75">
+                    <figcaption className="border-t border-white/10 bg-black px-3 py-2 font-mono text-xs text-white/75">
                       Video
                     </figcaption>
                   </figure>
                 ) : null}
                 {preview.keyframeAsset ? (
-                  <figure className="min-w-0 overflow-hidden rounded-lg border bg-black">
+                  <figure className="min-w-0 overflow-hidden rounded-md border bg-black">
                     <img
                       src={preview.keyframeAsset.url}
                       alt={`Keyframe for shot ${selectedShot.order + 1}`}
                       className="max-h-[65svh] w-full object-contain"
                     />
-                    <figcaption className="border-t border-white/10 bg-black px-3 py-2 font-mono text-[0.6875rem] uppercase tracking-wider text-white/75">
+                    <figcaption className="border-t border-white/10 bg-black px-3 py-2 font-mono text-xs text-white/75">
                       Keyframe
                     </figcaption>
                   </figure>
@@ -614,7 +607,7 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
               />
             ) : (
               <div className="space-y-5">
-                <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/25 px-3 py-2">
+                <div className="flex items-center justify-between gap-3 border-b pb-3">
                   <span className="text-sm font-medium">Shot {selectedShot.order + 1}</span>
                   <StatusBadge status={selectedShot.status} />
                 </div>
@@ -722,11 +715,9 @@ export default function EpisodeStudioPage({ params }: { params: Promise<{ planId
             )}
           </SectionPanel>
 
-          <Card>
-            <CardContent className="p-5">
-              <PlanQa planId={planId} />
-            </CardContent>
-          </Card>
+          <div className="border-t pt-5">
+            <PlanQa planId={planId} />
+          </div>
         </div>
       </div>
     </div>

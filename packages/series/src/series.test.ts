@@ -1,6 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import type { Db } from "@ai-series/db";
-import { BibleSchema, appendBibleRevisionInWorkspace, createSeriesInWorkspace } from "./series";
+import {
+  BibleSchema,
+  appendBibleRevisionInWorkspace,
+  buildBiblePrompt,
+  createSeriesInWorkspace,
+} from "./series";
 
 const bible = {
   title: "T",
@@ -97,5 +102,20 @@ describe("series bible schema", () => {
       isActive: true,
       title: "T",
     });
+  });
+});
+
+describe("series bible prompt", () => {
+  it("keeps the base prompt unchanged without creator details", () => {
+    expect(buildBiblePrompt("Create a bible")).toBe("Create a bible");
+    expect(buildBiblePrompt("Create a bible", "   ")).toBe("Create a bible");
+  });
+
+  it("adds normalized creator details while preserving the output contract", () => {
+    const prompt = buildBiblePrompt("Create a bible", "  A noir mystery in Madrid.  ");
+
+    expect(prompt).toContain("Creator-provided series details:");
+    expect(prompt).toContain("<series_details>\nA noir mystery in Madrid.\n</series_details>");
+    expect(prompt).toContain("preserving the required output contract");
   });
 });

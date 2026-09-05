@@ -5,6 +5,7 @@ import { generateStructured } from "@ai-series/ai";
 import { getActivePrompt, renderTemplate } from "@ai-series/prompts";
 import { getSeriesDetail } from "@ai-series/series";
 import { getCurrentStoryState, StoryStateStrictSchema } from "@ai-series/story";
+import { listActiveEntities, type ActiveEntity, type EntityType } from "@ai-series/entities";
 
 export const EpisodePlanSchema = z.object({
   hook: z.string(),
@@ -83,6 +84,60 @@ export async function appendEpisodePlanRevisionInWorkspace(
   return { id: created.id, version: next };
 }
 
+export function buildEpisodePlanPrompt(basePrompt: string, details?: string): string {
+  const normalizedDetails = details?.trim();
+  if (!normalizedDetails) return basePrompt;
+
+  return `${basePrompt}\n\nCreator-provided episode details:\n<episode_details>\n${normalizedDetails}\n</episode_details>\nIncorporate these details into the episode plan while preserving the required output contract.`;
+}
+
+export function buildEntitiesContext(activeEntities: ActiveEntity[]): string {
+  const groups: Record<EntityType, { id: string; name: string; data: Record<string, unknown> }[]> =
+    {
+      character: [],
+      location: [],
+      prop: [],
+    };
+  for (const entity of activeEntities) {
+    if (!Object.hasOwn(groups, entity.type)) continue;
+    groups[entity.type].push({ id: entity.id, name: entity.name, data: entity.data });
+  }
+  return JSON.stringify(
+    {
+      characters: groups.character,
+      locations: groups.location,
+      props: groups.prop,
+    },
+    null,
+    2,
+  );
+}
+
+export function appendEntitiesContext(basePrompt: string, entitiesContext: string): string {
+  return `${basePrompt}\n\nAvailable series entities (characters, locations, props) with their canonical ids:\n<series_entities>\n${entitiesContext}\n</series_entities>\nUse ONLY these entity ids in characterIds, locationIds, and propIds. Do not invent new ids; return an empty array for any field with no relevant existing entity.`;
+}
+
+export function sanitizePlanEntityIds(
+  plan: EpisodePlan,
+  activeEntities: ActiveEntity[],
+): EpisodePlan {
+  const idsByType: Record<EntityType, Set<string>> = {
+    character: new Set(),
+    location: new Set(),
+    prop: new Set(),
+  };
+  for (const entity of activeEntities) {
+    if (!Object.hasOwn(idsByType, entity.type)) continue;
+    idsByType[entity.type].add(entity.id);
+  }
+  return {
+    ...plan,
+    characterIds: plan.characterIds.filter((id) => idsByType.character.has(id)),
+    locationIds: plan.locationIds.filter((id) => idsByType.location.has(id)),
+    propIds: plan.propIds.filter((id) => idsByType.prop.has(id)),
+  };
+}
+
 async function createPlanVersion(
   db: Db,
   seriesId: string,
@@ -112,32 +167,51 @@ async function createPlanVersion(
 
 export async function generateEpisodePlan(
   db: Db,
-  input: { seriesId: string; episodeNumber: number; audienceDecision?: string },
+  input: { seriesId: string; episodeNumber: number; audienceDecision?: string; details?: string },
 ): Promise<string> {
   const detail = await getSeriesDetail(db, input.seriesId);
   if (!detail) throw new Error("Series not found");
   const bible = detail.bibles.find((b) => b.isActive);
   const state = await getCurrentStoryState(db, input.seriesId);
+  const activeEntities = await listActiveEntities(db, input.seriesId);
   const active = await getActivePrompt(db, "episode.plan");
   if (!active) throw new Error("No active episode.plan prompt");
 
+  const entitiesContext = buildEntitiesContext(activeEntities);
+  const details = input.details?.trim();
+  const hasDetailsPlaceholder = active.template.includes("{{episode_details}}");
+  const hasEntitiesPlaceholder = active.template.includes("{{entities}}");
   const variables = {
     series_name: detail.series.name,
     episode_number: String(input.episodeNumber),
     series_bible: JSON.stringify(bible ?? {}),
     story_state_before: JSON.stringify(state?.data ?? {}),
     audience_decision: input.audienceDecision ?? "none",
+    entities: entitiesContext,
+    ...(details
+      ? { episode_details: details }
+      : hasDetailsPlaceholder
+        ? { episode_details: "No additional episode details provided." }
+        : {}),
   };
   const { rendered, missing } = renderTemplate(active.template, variables, active.variables);
   if (missing.length > 0) throw new Error(`Missing prompt variables: ${missing.join(", ")}`);
 
-  const object = await generateStructured({ prompt: rendered, schema: EpisodePlanSchema });
+  let finalPrompt = rendered;
+  if (!hasEntitiesPlaceholder) {
+    finalPrompt = appendEntitiesContext(finalPrompt, entitiesContext);
+  }
+  if (!hasDetailsPlaceholder) {
+    finalPrompt = buildEpisodePlanPrompt(finalPrompt, details);
+  }
+  const rawObject = await generateStructured({ prompt: finalPrompt, schema: EpisodePlanSchema });
+  const object = sanitizePlanEntityIds(rawObject, activeEntities);
   const [snapshot] = await db
     .insert(promptSnapshots)
     .values({
       templateId: active.templateId,
       versionId: active.versionId,
-      renderedText: rendered,
+      renderedText: finalPrompt,
       variables,
       model: "gpt-4o-mini",
       params: {},

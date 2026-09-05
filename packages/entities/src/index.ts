@@ -6,6 +6,7 @@ export {
   archiveEntityInWorkspace,
   activateEntityVersion,
   listEntities,
+  listActiveEntities,
   getEntityDetail,
   attachReferenceAsset,
   generateEntityProposal,
@@ -14,7 +15,7 @@ export {
   LocationSchema,
   PropSchema,
 } from "./entities";
-export type { EntityRevisionResult, EntityType } from "./entities";
+export type { ActiveEntity, EntityRevisionResult, EntityType } from "./entities";
 export {
   generateReferenceSheet,
   listReferenceSheets,

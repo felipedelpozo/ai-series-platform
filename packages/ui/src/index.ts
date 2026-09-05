@@ -63,6 +63,8 @@ export {
 } from "./components/alert-dialog";
 export { Separator } from "./components/separator";
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./components/tooltip";
+export { SharedLayoutBackground } from "./components/shared-layout-background";
+export type { SharedLayoutBackgroundProps } from "./components/shared-layout-background";
 export { ThemeProvider, useTheme } from "./theme-provider";
 export type { Theme } from "./theme-provider";
 export { cn } from "./lib/utils";

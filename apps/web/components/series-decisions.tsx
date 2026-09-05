@@ -152,7 +152,7 @@ export function SeriesDecisions({ seriesId }: { seriesId: string }) {
       description="Review audience signals, compare candidates and select the direction that becomes canonical."
     >
       <div className="space-y-5" aria-busy={busyAction !== null}>
-        <div className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="w-full space-y-2 sm:max-w-40">
             <Label htmlFor="decision-episode-number">Episode number</Label>
             <Input
@@ -197,10 +197,10 @@ export function SeriesDecisions({ seriesId }: { seriesId: string }) {
         ) : (
           <ul className="space-y-4" aria-label="Audience decisions">
             {decisions.map((decision) => (
-              <li key={decision.id} className="min-w-0 rounded-xl border bg-card p-4 shadow-xs">
+              <li key={decision.id} className="min-w-0 rounded-lg border bg-card p-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <p className="text-xs font-medium text-muted-foreground">
                       Episode {decision.episodeNumber}
                     </p>
                     <h5 className="mt-1 break-words font-medium">{decision.title ?? "Decision"}</h5>
@@ -212,7 +212,7 @@ export function SeriesDecisions({ seriesId }: { seriesId: string }) {
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
                     <StatusBadge status={decision.status} />
-                    <span className="font-mono text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground tabular-nums">
                       {(decision.confidence * 100).toFixed(0)}% confidence
                     </span>
                   </div>
@@ -225,9 +225,7 @@ export function SeriesDecisions({ seriesId }: { seriesId: string }) {
                 ) : null}
 
                 <div className="mt-4">
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Candidates
-                  </p>
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">Candidates</p>
                   {(candidates[decision.id] ?? []).length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       No candidates are available for this decision.
@@ -256,7 +254,7 @@ export function SeriesDecisions({ seriesId }: { seriesId: string }) {
                             </p>
                           </div>
                           <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
-                            <span className="font-mono text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground tabular-nums">
                               {candidate.signalCount} signals · {candidate.score.toFixed(2)}
                             </span>
                             {decision.status === "proposed" ? (
