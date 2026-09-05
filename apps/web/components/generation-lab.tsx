@@ -386,10 +386,10 @@ export function GenerationLab({ onJobChange }: { onJobChange?: () => void }) {
         >
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Output type</legend>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
               <Button
                 type="button"
-                variant={mode === "image" ? "default" : "outline"}
+                variant={mode === "image" ? "default" : "ghost"}
                 aria-pressed={mode === "image"}
                 onClick={() => changeMode("image")}
               >
@@ -397,7 +397,7 @@ export function GenerationLab({ onJobChange }: { onJobChange?: () => void }) {
               </Button>
               <Button
                 type="button"
-                variant={mode === "video" ? "default" : "outline"}
+                variant={mode === "video" ? "default" : "ghost"}
                 aria-pressed={mode === "video"}
                 onClick={() => changeMode("video")}
               >
@@ -548,12 +548,10 @@ export function GenerationLab({ onJobChange }: { onJobChange?: () => void }) {
           ) : null}
         </form>
 
-        <div className="min-w-0 rounded-xl border bg-muted/15 p-4 sm:p-5">
+        <div className="min-w-0 rounded-lg border bg-muted/15 p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
             <div>
-              <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-primary">
-                Live output
-              </p>
+              <p className="text-xs font-medium text-muted-foreground">Live output</p>
               <h3 className="mt-1 text-base font-semibold">Preview and job status</h3>
             </div>
             {generation ? <StatusBadge status={generation.status} /> : null}
@@ -625,7 +623,7 @@ export function GenerationLab({ onJobChange }: { onJobChange?: () => void }) {
           ) : null}
 
           {generationActive ? (
-            <div className="mt-5 overflow-hidden rounded-xl border bg-background">
+            <div className="mt-5 overflow-hidden rounded-lg border bg-background">
               <div
                 className="aspect-video animate-pulse bg-muted motion-reduce:animate-none"
                 aria-hidden="true"
@@ -640,7 +638,7 @@ export function GenerationLab({ onJobChange }: { onJobChange?: () => void }) {
           ) : null}
 
           {asset && !previewError ? (
-            <figure className="mt-5 overflow-hidden rounded-xl border bg-background">
+            <figure className="mt-5 overflow-hidden rounded-lg border bg-background">
               <div className="grid min-h-64 place-items-center bg-black/95">
                 {asset.kind === "image" ? (
                   <img

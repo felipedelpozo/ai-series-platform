@@ -50,6 +50,26 @@ describe("studio state contract", () => {
       expect(source, `${sourcePath} lost its recovery action`).toMatch(/Retry|Try again|Refresh/);
     }
   });
+
+  test("keeps shared product composites low-chrome and free of rejected ornament", () => {
+    const compositeSources = [
+      "apps/web/components/ui/page-header.tsx",
+      "apps/web/components/ui/section-panel.tsx",
+      "apps/web/components/ui/empty-state.tsx",
+      "apps/web/components/ui/loading-skeleton.tsx",
+      "apps/web/components/ui/inline-notice.tsx",
+      "apps/web/components/ui/status-badge.tsx",
+    ];
+
+    for (const sourcePath of compositeSources) {
+      const source = readFileSync(resolve(process.cwd(), sourcePath), "utf8");
+      expect(source, `${sourcePath} retained ornamental uppercase`).not.toContain("uppercase");
+      expect(source, `${sourcePath} retained ornamental tracking`).not.toContain("tracking-");
+      expect(source, `${sourcePath} retained elevated panel shadows`).not.toMatch(
+        /shadow-(sm|md|lg|xl)/,
+      );
+    }
+  });
 });
 
 describe("studio action compatibility contract", () => {
@@ -72,6 +92,9 @@ describe("studio action compatibility contract", () => {
     });
     expect(byId["loops.scenes"]?.path).toBe("/api/loops/:id/scenes");
     expect(byId["prompts.create"]?.fields).toEqual(["purpose", "name", "template"]);
+    expect(byId["series.generateBible"]?.fields).toEqual(["details?"]);
+    expect(byId["entities.generate"]?.fields).toEqual(["details?"]);
+    expect(byId["plans.create"]?.fields).toEqual(["episodeNumber", "details?"]);
     expect(byId["assets.delete"]?.method).toBe("DELETE");
     expect(byId["studio.resolveQa"]?.fields).toEqual(["status"]);
   });

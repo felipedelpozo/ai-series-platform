@@ -36,7 +36,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --font-sans: var(--font-interface);
   --font-mono: var(--font-utility);
-  --font-display: var(--font-editorial);
+  --font-display: var(--font-interface);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -60,38 +60,6 @@
   }
   ::selection {
     background: color-mix(in oklab, var(--primary) 24%, transparent);
-  }
-}
-
-@layer utilities {
-  .font-display {
-    font-family: var(--font-editorial), ui-serif, Georgia, serif;
-  }
-  .studio-grid {
-    background-image:
-      linear-gradient(
-        to right,
-        color-mix(in oklab, var(--border) 45%, transparent) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        to bottom,
-        color-mix(in oklab, var(--border) 32%, transparent) 1px,
-        transparent 1px
-      );
-    background-size: 4rem 4rem;
-    background-position: -1px -1px;
-  }
-  .continuity-line {
-    position: relative;
-  }
-  .continuity-line::before {
-    position: absolute;
-    inset-block: 0.75rem;
-    left: 0.3125rem;
-    width: 1px;
-    content: "";
-    background: linear-gradient(var(--primary), var(--border));
   }
 }
 

@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Newsreader } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@ai-series/ui";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-interface" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-utility" });
-const newsreader = Newsreader({ subsets: ["latin"], variable: "--font-editorial" });
 
 export const metadata: Metadata = {
   title: { default: "AI Series Studio", template: "%s · AI Series Studio" },
@@ -20,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={`${geist.variable} ${geistMono.variable} ${newsreader.variable}`}>
+      <body className={`${geist.variable} ${geistMono.variable}`}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

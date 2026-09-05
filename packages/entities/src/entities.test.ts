@@ -1,7 +1,18 @@
 import { describe, expect, it } from "bun:test";
-import { CharacterSchema, LocationSchema, PropSchema } from "./entities";
+import {
+  CharacterSchema,
+  EntityTypeSchema,
+  LocationSchema,
+  PropSchema,
+  buildEntityPrompt,
+} from "./entities";
 
 describe("entity schemas", () => {
+  it("accepts only canonical entity types", () => {
+    expect(EntityTypeSchema.parse("character")).toBe("character");
+    expect(EntityTypeSchema.safeParse("vehicle").success).toBe(false);
+  });
+
   it("validates a character with defaults", () => {
     const c = CharacterSchema.parse({
       role: "hero",
@@ -40,5 +51,25 @@ describe("entity schemas", () => {
       narrativeRelevance: "unlocks the vault",
     });
     expect(p.material).toBe("brass");
+  });
+});
+
+describe("entity generation prompt", () => {
+  it("keeps the base prompt unchanged without creator details", () => {
+    expect(buildEntityPrompt("Create a character")).toBe("Create a character");
+    expect(buildEntityPrompt("Create a character", "   ")).toBe("Create a character");
+  });
+
+  it("adds normalized creator details while preserving the output contract", () => {
+    const prompt = buildEntityPrompt(
+      "Create a location",
+      "  An abandoned metro station beneath Madrid.  ",
+    );
+
+    expect(prompt).toContain("Creator-provided entity details:");
+    expect(prompt).toContain(
+      "<entity_details>\nAn abandoned metro station beneath Madrid.\n</entity_details>",
+    );
+    expect(prompt).toContain("preserving the required output contract");
   });
 });

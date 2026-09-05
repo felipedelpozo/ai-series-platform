@@ -73,13 +73,14 @@ const SEEDS = [
     purpose: "episode.plan",
     name: "Episode Plan",
     template:
-      'Create a structured episode plan for episode {{episode_number}} of "{{series_name}}". Series bible: {{series_bible}}. Story state before: {{story_state_before}}. Audience decision: {{audience_decision}}. Return JSON with: hook, dramaticGoal, beats (array), targetDuration, characterIds (array), locationIds (array), propIds (array), reveals (array), requiredContinuity (array), closing, cliffhanger, audienceQuestion (string or null), proposedStoryStateAfter (object with currentEpisode, characters (array of {id,name,location,state,relationships}), inventory, facts, goals, secretsKnown, secretsUnknown, openQuestions, pastDecisions, pendingConsequences, canon).',
+      'Create a structured episode plan for episode {{episode_number}} of "{{series_name}}". Series bible: {{series_bible}}. Story state before: {{story_state_before}}. Audience decision: {{audience_decision}}.\n\nAvailable series entities (characters, locations, props) with their canonical ids:\n<series_entities>\n{{entities}}\n</series_entities>\n\nUse ONLY these entity ids in characterIds, locationIds, and propIds. Do not invent new ids; return an empty array for any field with no relevant existing entity. Return JSON with: hook, dramaticGoal, beats (array), targetDuration, characterIds (array), locationIds (array), propIds (array), reveals (array), requiredContinuity (array), closing, cliffhanger, audienceQuestion (string or null), proposedStoryStateAfter (object with currentEpisode, characters (array of {id,name,location,state,relationships}), inventory, facts, goals, secretsKnown, secretsUnknown, openQuestions, pastDecisions, pendingConsequences, canon).',
     variables: [
       { name: "series_name", required: true },
       { name: "episode_number", required: true },
       { name: "series_bible", required: true },
       { name: "story_state_before", required: true },
       { name: "audience_decision", required: false, default: "none" },
+      { name: "entities", required: false, default: "none" },
     ],
   },
   {
@@ -93,7 +94,7 @@ const SEEDS = [
     purpose: "shot.plan",
     name: "Shot Plan",
     template:
-      'Given the scene {{scene}} and shot index {{shot_index}}, create one cinematic shot. Return JSON with: type, subject, action, composition, camera, lens, lighting, emotion, requiredReferences (array), imagePrompt, videoPrompt, continuityConstraints (array).',
+      "Given the scene {{scene}} and shot index {{shot_index}}, create one cinematic shot. Return JSON with: type, subject, action, composition, camera, lens, lighting, emotion, requiredReferences (array), imagePrompt, videoPrompt, continuityConstraints (array).",
     variables: [
       { name: "scene", required: true },
       { name: "shot_index", required: true },
@@ -150,7 +151,7 @@ const SEEDS = [
     purpose: "audience.decide",
     name: "Audience Decide",
     template:
-      'Given these scored candidates {{candidates}}, write a concise editorial decision. Return JSON with: title, summary, rationale (explain why the top candidate was chosen and how confidence should be interpreted).',
+      "Given these scored candidates {{candidates}}, write a concise editorial decision. Return JSON with: title, summary, rationale (explain why the top candidate was chosen and how confidence should be interpreted).",
     variables: [{ name: "candidates", required: true }],
   },
 ];

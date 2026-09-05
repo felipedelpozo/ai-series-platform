@@ -441,7 +441,7 @@ export function PromptEditor({ template, versions }: PromptEditorProps) {
 
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge status={template.status} />
-        <Badge variant="outline" className="max-w-full truncate font-mono">
+        <Badge variant="outline" className="max-w-full truncate">
           {template.purpose}
         </Badge>
         {active ? <Badge variant="muted">Active version · v{active.version}</Badge> : null}
@@ -612,7 +612,7 @@ export function PromptEditor({ template, versions }: PromptEditorProps) {
                       All required values were supplied.
                     </div>
                   )}
-                  <pre className="max-h-96 max-w-full overflow-auto whitespace-pre-wrap break-words rounded-lg border bg-muted/35 p-4 font-mono text-xs leading-relaxed">
+                  <pre className="max-h-96 max-w-full overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/25 p-4 font-mono text-xs leading-relaxed">
                     {preview.rendered}
                   </pre>
                 </div>
@@ -645,10 +645,10 @@ export function PromptEditor({ template, versions }: PromptEditorProps) {
                   return (
                     <li
                       key={version.id}
-                      className="flex min-w-0 items-center justify-between gap-3 rounded-lg border bg-background p-3"
+                      className="flex min-w-0 items-center justify-between gap-3 rounded-md border bg-background p-3"
                     >
                       <div className="min-w-0">
-                        <p className="font-mono text-sm font-medium">Version {version.version}</p>
+                        <p className="text-sm font-medium">Version {version.version}</p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {version.variables.length} declared variable
                           {version.variables.length === 1 ? "" : "s"}

@@ -159,7 +159,7 @@ export default function GenerationsPage() {
   const filtered = kind !== "all" || status !== "all";
 
   return (
-    <div className="flex min-w-0 flex-col gap-8">
+    <div className="flex min-w-0 flex-col gap-6">
       <PageHeader
         eyebrow="Production desk / Generations"
         title="Generation lab"
@@ -172,7 +172,7 @@ export default function GenerationsPage() {
         title="Job history"
         description="Filter the queue, select a job and inspect its immutable execution trail."
       >
-        <div className="mb-5 grid gap-3 border-b pb-5 sm:grid-cols-2 lg:max-w-xl">
+        <div className="mb-5 grid gap-4 border-b pb-5 sm:grid-cols-2 lg:max-w-xl">
           <div className="space-y-2">
             <Label htmlFor="generation-kind-filter">Output type</Label>
             <Select value={kind} onValueChange={setKind}>
@@ -262,7 +262,7 @@ export default function GenerationsPage() {
                         type="button"
                         aria-pressed={selected}
                         onClick={() => void open(job.id)}
-                        className="group flex min-h-20 w-full min-w-0 flex-col gap-3 rounded-xl border bg-card px-4 py-3 text-left shadow-xs outline-none transition-colors hover:border-primary/35 hover:bg-accent/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 data-[selected=true]:border-primary/45 data-[selected=true]:bg-primary/[0.055] sm:flex-row sm:items-center sm:justify-between"
+                        className="group flex min-h-20 w-full min-w-0 flex-col gap-3 rounded-lg border bg-card px-4 py-3 text-left outline-none transition-colors hover:border-foreground/20 hover:bg-muted/35 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 data-[selected=true]:border-primary/50 data-[selected=true]:bg-primary/5 sm:flex-row sm:items-center sm:justify-between"
                         data-selected={selected}
                       >
                         <span className="min-w-0">
@@ -319,13 +319,11 @@ export default function GenerationsPage() {
             ) : null}
 
             {!detailLoading && detail ? (
-              <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
+              <div className="overflow-hidden rounded-lg border bg-card">
                 <div className="border-b bg-muted/20 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted-foreground">
-                        Selected job
-                      </p>
+                      <p className="text-xs font-medium text-muted-foreground">Selected job</p>
                       <h3 className="mt-1 truncate text-base font-semibold capitalize">
                         {detail.job.kind} · {compactId(detail.job.id)}
                       </h3>

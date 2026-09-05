@@ -12,7 +12,7 @@ export default function SettingsPage() {
       emptyDescription="Platform and workspace settings are not configurable from this screen yet. You can still manage identity and workspace access in Accounts."
       icon={Settings2}
       action={
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href="/accounts">Open accounts</Link>
         </Button>
       }

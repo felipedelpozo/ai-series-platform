@@ -3,14 +3,16 @@ export {
   editEntity,
   activateEntityVersion,
   listEntities,
+  listActiveEntities,
   getEntityDetail,
   attachReferenceAsset,
   generateEntityProposal,
   CharacterSchema,
   LocationSchema,
   PropSchema,
+  EntityTypeSchema,
 } from "./entities";
-export type { EntityType } from "./entities";
+export type { EntityType, ActiveEntity } from "./entities";
 export {
   generateReferenceSheet,
   listReferenceSheets,

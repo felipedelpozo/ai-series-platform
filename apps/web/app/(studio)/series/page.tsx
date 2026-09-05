@@ -13,6 +13,7 @@ import {
   Textarea,
 } from "@ai-series/ui";
 import { BookOpen, LibraryBig } from "lucide-react";
+import { ProductionSetupRail } from "@/components/production-progress-rail";
 import { SeriesDecisions } from "@/components/series-decisions";
 import { SeriesEntities } from "@/components/series-entities";
 import { SeriesLoops } from "@/components/series-loops";
@@ -39,6 +40,14 @@ type Bible = {
   genre: string | null;
   tone: string | null;
   audience: string | null;
+  format: string | null;
+  language: string | null;
+  episodeDuration: string | null;
+  narrativeRules: string[];
+  visualStyle: string | null;
+  canon: string[];
+  prohibitions: string[];
+  description: string | null;
   source: string;
 };
 
@@ -56,13 +65,64 @@ function responseError(data: Record<string, unknown>, fallback: string) {
   return typeof data.error === "string" ? data.error : fallback;
 }
 
+function bibleRevisionJson(bible: Bible): string {
+  return JSON.stringify(
+    {
+      title: bible.title ?? "",
+      premise: bible.premise ?? "",
+      genre: bible.genre ?? "",
+      tone: bible.tone ?? "",
+      audience: bible.audience ?? "",
+      format: bible.format ?? "",
+      language: bible.language ?? "",
+      episodeDuration: bible.episodeDuration ?? "",
+      narrativeRules: bible.narrativeRules,
+      visualStyle: bible.visualStyle ?? "",
+      canon: bible.canon,
+      prohibitions: bible.prohibitions,
+      description: bible.description ?? "",
+    },
+    null,
+    2,
+  );
+}
+
+function BibleTextField({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className="mt-1 whitespace-pre-wrap text-sm">{value || "—"}</dd>
+    </div>
+  );
+}
+
+function BibleListField({ label, values }: { label: string; values: string[] }) {
+  return (
+    <div>
+      <h5 className="text-xs font-medium text-muted-foreground">{label}</h5>
+      {values.length > 0 ? (
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
+          {values.map((value, index) => (
+            <li key={`${index}-${value}`}>{value}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1 text-sm">—</p>
+      )}
+    </div>
+  );
+}
+
 export default function SeriesPage() {
   const [seriesList, setSeriesList] = useState<Series[]>([]);
   const [name, setName] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Series | null>(null);
   const [bibles, setBibles] = useState<Bible[]>([]);
+  const [entityCount, setEntityCount] = useState<number | null>(null);
+  const [planCount, setPlanCount] = useState<number | null>(null);
   const [bibleJson, setBibleJson] = useState("{}");
+  const [bibleDetails, setBibleDetails] = useState("");
   const [listLoading, setListLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
@@ -76,6 +136,7 @@ export default function SeriesPage() {
   const selectedIdRef = useRef<string | null>(null);
   const listRequestRef = useRef(0);
   const detailRequestRef = useRef(0);
+  const summaryRequestRef = useRef(0);
   const actionRequestRef = useRef(0);
   const actionBusyRef = useRef<string | null>(null);
 
@@ -101,39 +162,75 @@ export default function SeriesPage() {
     }
   }, []);
 
-  const open = useCallback(async (id: string, preserveAction = false) => {
-    const requestId = ++detailRequestRef.current;
-    if (!preserveAction) {
-      actionRequestRef.current += 1;
-      setPendingAction(null);
+  const loadSeriesSummary = useCallback(async (id: string) => {
+    if (selectedIdRef.current !== id) return;
+    const requestId = ++summaryRequestRef.current;
+    const [entitiesResult, plansResult] = await Promise.allSettled([
+      fetch(`/api/entities?seriesId=${id}`).then((response) =>
+        response.ok ? readResponseData(response) : ({} as Record<string, unknown>),
+      ),
+      fetch(`/api/series/${id}/plans`).then((response) =>
+        response.ok ? readResponseData(response) : ({} as Record<string, unknown>),
+      ),
+    ]);
+    if (
+      !mountedRef.current ||
+      selectedIdRef.current !== id ||
+      requestId !== summaryRequestRef.current
+    ) {
+      return;
     }
-    selectedIdRef.current = id;
-    setSelectedId(id);
-    setSelected(null);
-    setBibles([]);
-    setDetailLoading(true);
-    setDetailError(null);
-    setDetailMessage(null);
-
-    try {
-      const response = await fetch(`/api/series/${id}`);
-      const data = await readResponseData(response);
-      if (!response.ok) throw new Error(responseError(data, "Failed to load series details"));
-      if (!data.series || typeof data.series !== "object" || !Array.isArray(data.bibles)) {
-        throw new Error("Series detail response was not valid");
-      }
-      if (mountedRef.current && requestId === detailRequestRef.current) {
-        setSelected(data.series as Series);
-        setBibles(data.bibles as Bible[]);
-      }
-    } catch (error) {
-      if (mountedRef.current && requestId === detailRequestRef.current) {
-        setDetailError(error instanceof Error ? error.message : "Failed to load series details");
-      }
-    } finally {
-      if (mountedRef.current && requestId === detailRequestRef.current) setDetailLoading(false);
-    }
+    const entitiesData = entitiesResult.status === "fulfilled" ? entitiesResult.value : {};
+    const plansData = plansResult.status === "fulfilled" ? plansResult.value : {};
+    setEntityCount(Array.isArray(entitiesData.entities) ? entitiesData.entities.length : null);
+    setPlanCount(
+      Array.isArray(plansData.plans)
+        ? plansData.plans.filter(
+            (plan) => typeof plan === "object" && plan !== null && plan.isActive === true,
+          ).length
+        : null,
+    );
   }, []);
+
+  const open = useCallback(
+    async (id: string, preserveAction = false) => {
+      const requestId = ++detailRequestRef.current;
+      if (!preserveAction) {
+        actionRequestRef.current += 1;
+        setPendingAction(null);
+      }
+      selectedIdRef.current = id;
+      setSelectedId(id);
+      setSelected(null);
+      setBibles([]);
+      setEntityCount(null);
+      setPlanCount(null);
+      setDetailLoading(true);
+      setDetailError(null);
+      setDetailMessage(null);
+
+      try {
+        const response = await fetch(`/api/series/${id}`);
+        const data = await readResponseData(response);
+        if (!response.ok) throw new Error(responseError(data, "Failed to load series details"));
+        if (!data.series || typeof data.series !== "object" || !Array.isArray(data.bibles)) {
+          throw new Error("Series detail response was not valid");
+        }
+        if (mountedRef.current && requestId === detailRequestRef.current) {
+          setSelected(data.series as Series);
+          setBibles(data.bibles as Bible[]);
+          void loadSeriesSummary(id);
+        }
+      } catch (error) {
+        if (mountedRef.current && requestId === detailRequestRef.current) {
+          setDetailError(error instanceof Error ? error.message : "Failed to load series details");
+        }
+      } finally {
+        if (mountedRef.current && requestId === detailRequestRef.current) setDetailLoading(false);
+      }
+    },
+    [loadSeriesSummary],
+  );
 
   useEffect(() => {
     mountedRef.current = true;
@@ -143,6 +240,7 @@ export default function SeriesPage() {
       mountedRef.current = false;
       listRequestRef.current += 1;
       detailRequestRef.current += 1;
+      summaryRequestRef.current += 1;
       actionRequestRef.current += 1;
     };
   }, [loadSeries]);
@@ -186,6 +284,8 @@ export default function SeriesPage() {
         `/api/series/${seriesId}/generate-bible`,
         {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ details: bibleDetails }),
         },
       );
       const data = await readResponseData(response);
@@ -296,21 +396,21 @@ export default function SeriesPage() {
         description="Choose a series, establish its canon and move through each production layer from story foundations to audience feedback."
       />
 
-      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] lg:items-start">
+      <div className="flex min-w-0 flex-col gap-6">
         <SectionPanel
           title="Series library"
-          description="Select the production context you want to develop."
-          className="min-w-0 lg:sticky lg:top-6"
+          description="Create or choose the production context you want to develop."
+          className="min-w-0"
         >
           <div className="space-y-5">
             <form
-              className="space-y-3 border-b pb-5"
+              className="flex flex-col gap-3 border-b pb-5 sm:flex-row sm:flex-wrap sm:items-end"
               onSubmit={(event) => {
                 event.preventDefault();
                 void create();
               }}
             >
-              <div className="space-y-2">
+              <div className="min-w-0 flex-1 space-y-2">
                 <Label htmlFor="series-name">Series name</Label>
                 <Input
                   id="series-name"
@@ -326,20 +426,22 @@ export default function SeriesPage() {
                   disabled={createBusy}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={createBusy}>
+              <Button type="submit" className="w-full sm:w-auto" disabled={createBusy}>
                 {createBusy ? "Creating series…" : "Create series"}
               </Button>
               {createError ? (
-                <div id="series-create-error">
+                <div id="series-create-error" className="sm:basis-full">
                   <InlineNotice title="Series was not created" variant="destructive">
                     {createError} Your name is still here so you can try again.
                   </InlineNotice>
                 </div>
               ) : null}
               {createMessage ? (
-                <InlineNotice title="Series created" variant="success">
-                  {createMessage}
-                </InlineNotice>
+                <div className="sm:basis-full">
+                  <InlineNotice title="Series created" variant="success">
+                    {createMessage}
+                  </InlineNotice>
+                </div>
               ) : null}
             </form>
 
@@ -372,7 +474,7 @@ export default function SeriesPage() {
 
             {!listLoading && !listError && seriesList.length > 0 ? (
               <ul
-                className="max-h-[32rem] space-y-2 overflow-y-auto pr-1"
+                className="grid max-h-[24rem] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3"
                 aria-label="Available series"
               >
                 {seriesList.map((series) => {
@@ -381,14 +483,18 @@ export default function SeriesPage() {
                     <li key={series.id}>
                       <button
                         type="button"
-                        onClick={() => void open(series.id)}
+                        onClick={() => {
+                          if (isSelected) return;
+                          setBibleDetails("");
+                          void open(series.id);
+                        }}
                         aria-pressed={isSelected}
                         aria-controls="series-detail"
-                        className="flex min-h-14 w-full min-w-0 items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-primary/45 aria-pressed:bg-primary/8"
+                        className="flex min-h-20 w-full min-w-0 items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-left outline-none transition-colors hover:border-foreground/25 hover:bg-muted/20 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 aria-pressed:border-foreground aria-pressed:bg-muted/30 aria-pressed:ring-1 aria-pressed:ring-foreground"
                       >
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-medium">{series.name}</span>
-                          <span className="block truncate font-mono text-[0.6875rem] text-muted-foreground">
+                          <span className="mt-1 block truncate text-xs text-muted-foreground">
                             {series.slug}
                           </span>
                         </span>
@@ -467,6 +573,20 @@ export default function SeriesPage() {
                   </InlineNotice>
                 ) : null}
 
+                <div className="rounded-lg border bg-muted/20 p-4">
+                  <div className="mb-4">
+                    <h3 className="text-sm font-medium">Production setup</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Live summary of the selected series&apos; canonical inputs.
+                    </p>
+                  </div>
+                  <ProductionSetupRail
+                    hasActiveBible={bibles.some((bible) => bible.isActive)}
+                    entityCount={entityCount}
+                    planCount={planCount}
+                  />
+                </div>
+
                 <Tabs key={selected.id} defaultValue="bible" className="min-w-0">
                   <TabsList aria-label="Series production sections">
                     <TabsTrigger value="bible">Bible</TabsTrigger>
@@ -479,7 +599,7 @@ export default function SeriesPage() {
                   </TabsList>
 
                   <TabsContent value="bible" className="min-w-0 space-y-6">
-                    <div className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="border-b pb-5">
                       <div className="min-w-0">
                         <h3 className="text-base font-semibold">Series bible</h3>
                         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -487,14 +607,43 @@ export default function SeriesPage() {
                           revision.
                         </p>
                       </div>
-                      <Button
-                        type="button"
-                        onClick={() => void generate()}
-                        disabled={pendingAction !== null}
-                        className="shrink-0"
-                      >
-                        {pendingAction === "generate" ? "Generating bible…" : "Generate bible (AI)"}
-                      </Button>
+                      <div className="mt-4 space-y-3 rounded-lg border bg-muted/15 p-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="bible-details">
+                            Series details for AI{" "}
+                            <span className="font-normal text-muted-foreground">(optional)</span>
+                          </Label>
+                          <Textarea
+                            id="bible-details"
+                            value={bibleDetails}
+                            onChange={(event) => setBibleDetails(event.target.value)}
+                            rows={4}
+                            maxLength={4000}
+                            placeholder="Describe the premise, genre, tone, target audience, visual references, characters, setting, episode length, narrative rules or any constraints the AI should follow."
+                            aria-describedby="bible-details-help"
+                            disabled={pendingAction !== null}
+                          />
+                        </div>
+                        <div
+                          id="bible-details-help"
+                          className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"
+                        >
+                          <p>
+                            Included in this generation and recorded in its immutable prompt
+                            snapshot.
+                          </p>
+                          <span className="tabular-nums">{bibleDetails.length}/4000</span>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={() => void generate()}
+                          disabled={pendingAction !== null}
+                        >
+                          {pendingAction === "generate"
+                            ? "Generating bible…"
+                            : "Generate bible (AI)"}
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="space-y-3">
@@ -516,38 +665,90 @@ export default function SeriesPage() {
                           {bibles.map((bible) => {
                             const isActivating = pendingAction === `activate:${bible.id}`;
                             return (
-                              <li
-                                key={bible.id}
-                                className="flex min-w-0 flex-col gap-3 rounded-lg border bg-muted/25 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-                              >
-                                <div className="min-w-0">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <span className="font-mono text-xs font-semibold">
-                                      Revision {bible.version}
-                                    </span>
-                                    {bible.isActive ? (
-                                      <Badge variant="success">active</Badge>
-                                    ) : null}
+                              <li key={bible.id} className="min-w-0 rounded-lg border bg-muted/25">
+                                <div className="flex min-w-0 flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                  <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="text-xs font-medium tabular-nums">
+                                        Revision {bible.version}
+                                      </span>
+                                      {bible.isActive ? (
+                                        <Badge variant="success">active</Badge>
+                                      ) : null}
+                                    </div>
+                                    <p className="mt-1 break-words text-sm font-medium">
+                                      {bible.title ?? "Untitled bible"}
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                      Source: {bible.source}
+                                    </p>
                                   </div>
-                                  <p className="mt-1 break-words text-sm font-medium">
-                                    {bible.title ?? "Untitled bible"}
-                                  </p>
-                                  <p className="mt-1 font-mono text-[0.6875rem] text-muted-foreground">
-                                    Source: {bible.source}
-                                  </p>
+                                  {!bible.isActive ? (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => void activate(bible.id)}
+                                      disabled={pendingAction !== null}
+                                      className="shrink-0 self-start sm:self-center"
+                                    >
+                                      {isActivating ? "Activating…" : "Activate"}
+                                    </Button>
+                                  ) : null}
                                 </div>
-                                {!bible.isActive ? (
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => void activate(bible.id)}
-                                    disabled={pendingAction !== null}
-                                    className="shrink-0 self-start sm:self-center"
-                                  >
-                                    {isActivating ? "Activating…" : "Activate"}
-                                  </Button>
-                                ) : null}
+                                <details
+                                  open={bible.isActive}
+                                  className="border-t bg-background/70"
+                                >
+                                  <summary className="flex min-h-10 cursor-pointer items-center px-3 py-2 text-xs font-medium text-muted-foreground outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring">
+                                    Full revision details
+                                  </summary>
+                                  <div className="space-y-4 border-t p-4">
+                                    <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                      <BibleTextField label="Title" value={bible.title} />
+                                      <BibleTextField label="Genre" value={bible.genre} />
+                                      <BibleTextField label="Tone" value={bible.tone} />
+                                      <BibleTextField label="Audience" value={bible.audience} />
+                                      <BibleTextField label="Format" value={bible.format} />
+                                      <BibleTextField label="Language" value={bible.language} />
+                                      <BibleTextField
+                                        label="Episode duration"
+                                        value={bible.episodeDuration}
+                                      />
+                                    </dl>
+                                    <dl className="grid gap-3">
+                                      <BibleTextField label="Premise" value={bible.premise} />
+                                      <BibleTextField
+                                        label="Description"
+                                        value={bible.description}
+                                      />
+                                      <BibleTextField
+                                        label="Visual style"
+                                        value={bible.visualStyle}
+                                      />
+                                    </dl>
+                                    <div className="grid gap-4 xl:grid-cols-3">
+                                      <BibleListField
+                                        label="Narrative rules"
+                                        values={bible.narrativeRules}
+                                      />
+                                      <BibleListField label="Canon" values={bible.canon} />
+                                      <BibleListField
+                                        label="Prohibitions"
+                                        values={bible.prohibitions}
+                                      />
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setBibleJson(bibleRevisionJson(bible))}
+                                      disabled={pendingAction !== null}
+                                    >
+                                      Edit as new revision
+                                    </Button>
+                                  </div>
+                                </details>
                               </li>
                             );
                           })}
@@ -592,13 +793,19 @@ export default function SeriesPage() {
                   </TabsContent>
 
                   <TabsContent value="entities" className="min-w-0 overflow-x-auto">
-                    <SeriesEntities seriesId={selected.id} />
+                    <SeriesEntities
+                      seriesId={selected.id}
+                      onEntitiesChanged={() => void loadSeriesSummary(selected.id)}
+                    />
                   </TabsContent>
                   <TabsContent value="story-state" className="min-w-0 overflow-x-auto">
                     <SeriesStoryState seriesId={selected.id} />
                   </TabsContent>
                   <TabsContent value="plans" className="min-w-0 overflow-x-auto">
-                    <SeriesPlans seriesId={selected.id} />
+                    <SeriesPlans
+                      seriesId={selected.id}
+                      onPlansChanged={() => void loadSeriesSummary(selected.id)}
+                    />
                   </TabsContent>
                   <TabsContent value="decisions" className="min-w-0 overflow-x-auto">
                     <SeriesDecisions seriesId={selected.id} />

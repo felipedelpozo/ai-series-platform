@@ -100,7 +100,7 @@ function AssetFallback({
   return (
     <div
       className={cn(
-        "flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/35 text-muted-foreground",
+        "flex w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed bg-muted/20 text-muted-foreground",
         compact ? "h-32" : "min-h-52",
       )}
       role="img"
@@ -124,7 +124,7 @@ function AssetMedia({ asset, compact = false }: { asset: Asset; compact?: boolea
         src={asset.url}
         alt={`Preview of asset ${asset.id}`}
         className={cn(
-          "w-full rounded-lg border bg-muted object-contain",
+          "w-full rounded-md border bg-muted object-contain",
           compact ? "h-32" : "max-h-80 min-h-52",
         )}
         loading="lazy"
@@ -140,7 +140,7 @@ function AssetMedia({ asset, compact = false }: { asset: Asset; compact?: boolea
         aria-label={`Video preview for asset ${asset.id}`}
         controls
         preload="metadata"
-        className="max-h-80 min-h-52 w-full rounded-lg border bg-black object-contain"
+        className="max-h-80 min-h-52 w-full rounded-md border bg-black object-contain"
         onError={() => setFailedUrl(asset.url)}
       >
         Video preview unavailable.
@@ -150,7 +150,7 @@ function AssetMedia({ asset, compact = false }: { asset: Asset; compact?: boolea
 
   if (!compact && asset.kind === "audio") {
     return (
-      <div className="flex min-h-32 items-center rounded-lg border bg-muted/35 p-5">
+      <div className="flex min-h-32 items-center rounded-md border bg-muted/20 p-5">
         <audio
           src={asset.url}
           aria-label={`Audio preview for asset ${asset.id}`}
@@ -347,18 +347,15 @@ export default function AssetsPage() {
   const hasActiveFilters = Boolean(kind || status);
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-8">
       <PageHeader
         eyebrow="Media library"
         title="Assets"
         description="Review source media, inspect provenance and dimensions, then set the production status."
       />
 
-      <section
-        aria-labelledby="asset-filters-title"
-        className="rounded-xl border bg-card p-4 shadow-xs"
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <section aria-labelledby="asset-filters-title" className="border-b pb-5">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <h2 id="asset-filters-title" className="text-sm font-semibold">
               Filter the library
@@ -367,7 +364,7 @@ export default function AssetsPage() {
               Narrow the collection by media kind or production status.
             </p>
           </div>
-          <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[26rem]">
+          <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[28rem]">
             <div className="space-y-2">
               <Label htmlFor="asset-kind-filter">Media kind</Label>
               <Select value={kind || ALL_FILTER_VALUE} onValueChange={changeKindFilter}>
@@ -467,8 +464,8 @@ export default function AssetsPage() {
                       aria-label={`Select ${asset.kind} asset ${asset.id}`}
                       onClick={() => void open(asset.id)}
                       className={cn(
-                        "group w-full min-w-0 rounded-xl border bg-card p-2 text-left shadow-xs outline-none transition-[border-color,box-shadow,background-color] hover:bg-accent/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                        isSelected && "border-primary ring-2 ring-primary/20",
+                        "group w-full min-w-0 rounded-lg border bg-card p-2 text-left outline-none transition-colors hover:border-foreground/20 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        isSelected && "border-foreground/30 bg-muted/40",
                       )}
                     >
                       <AssetMedia asset={asset} compact />
@@ -542,35 +539,37 @@ export default function AssetsPage() {
                   <StatusBadge status={detail.asset.status} />
                 </div>
 
-                <dl className="grid min-w-0 grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-x-3 gap-y-3 border-y py-4 text-sm">
-                  <dt className="text-muted-foreground">Source</dt>
-                  <dd className="min-w-0 break-words text-right font-medium">
+                <dl className="grid min-w-0 grid-cols-[minmax(0,7rem)_minmax(0,1fr)] border-y text-sm">
+                  <dt className="border-b py-3 text-muted-foreground">Source</dt>
+                  <dd className="min-w-0 break-words border-b py-3 text-right font-medium">
                     {detail.asset.source}
                   </dd>
-                  <dt className="text-muted-foreground">Format</dt>
-                  <dd className="min-w-0 break-words text-right font-medium">
+                  <dt className="border-b py-3 text-muted-foreground">Format</dt>
+                  <dd className="min-w-0 break-words border-b py-3 text-right font-medium">
                     {detail.asset.mime || "Unknown"}
                   </dd>
-                  <dt className="text-muted-foreground">Dimensions</dt>
-                  <dd className="text-right font-medium">
+                  <dt className="border-b py-3 text-muted-foreground">Dimensions</dt>
+                  <dd className="border-b py-3 text-right font-medium">
                     {detail.asset.width && detail.asset.height
                       ? `${detail.asset.width} × ${detail.asset.height}`
                       : "Unknown"}
                   </dd>
-                  <dt className="text-muted-foreground">File size</dt>
-                  <dd className="text-right font-medium">{formatBytes(detail.asset.sizeBytes)}</dd>
-                  <dt className="text-muted-foreground">Provider</dt>
-                  <dd className="min-w-0 break-words text-right font-medium">
+                  <dt className="border-b py-3 text-muted-foreground">File size</dt>
+                  <dd className="border-b py-3 text-right font-medium">
+                    {formatBytes(detail.asset.sizeBytes)}
+                  </dd>
+                  <dt className="border-b py-3 text-muted-foreground">Provider</dt>
+                  <dd className="min-w-0 break-words border-b py-3 text-right font-medium">
                     {detail.asset.provider ?? "Unknown"}
                   </dd>
-                  <dt className="text-muted-foreground">Model</dt>
-                  <dd className="min-w-0 break-words text-right font-medium">
+                  <dt className="py-3 text-muted-foreground">Model</dt>
+                  <dd className="min-w-0 break-words py-3 text-right font-medium">
                     {detail.asset.model ?? "Unknown"}
                   </dd>
                 </dl>
 
                 {detail.generation ? (
-                  <div className="rounded-lg bg-muted/45 p-3 text-xs leading-relaxed text-muted-foreground">
+                  <div className="border-l-2 border-primary/60 pl-3 text-xs leading-relaxed text-muted-foreground">
                     Generated by{" "}
                     <span className="font-medium text-foreground">{detail.generation.model}</span>
                   </div>
