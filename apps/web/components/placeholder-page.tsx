@@ -18,14 +18,14 @@ export function PlaceholderPage({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-5">
       <PageHeader eyebrow="Workspace configuration" title={title} description={description} />
       <EmptyState
         icon={icon}
         title={emptyTitle}
         description={emptyDescription}
         action={action}
-        className="min-h-80"
+        className="min-h-72"
       />
     </div>
   );

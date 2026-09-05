@@ -84,6 +84,11 @@ async function assertMobileKeyboardJourney(page: Page) {
     .locator('[role="dialog"] button:visible, [role="dialog"] a:visible')
     .evaluateAll((elements) =>
       elements
+        .filter(
+          (element) =>
+            element.getRootNode() === document &&
+            element.getAttribute("aria-label") !== "Open Next.js Dev Tools",
+        )
         .map((element) => ({
           name: element.getAttribute("aria-label") ?? element.textContent?.trim(),
           height: element.getBoundingClientRect().height,
@@ -136,7 +141,7 @@ async function assertTouchTargets(page: Page) {
             element.getAttribute("aria-label") ?? element.textContent?.trim() ?? element.tagName,
           height: element.getBoundingClientRect().height,
         }))
-        .filter(({ height }) => height < 39.5),
+        .filter(({ height, name }) => height < 39.5 && name !== "Open Next.js Dev Tools"),
     );
   expect(undersized).toEqual([]);
 
@@ -162,46 +167,101 @@ test("root preserves the canonical Series destination", async ({ page }) => {
 });
 
 for (const width of viewports) {
-  test.describe(`${width}px route matrix`, () => {
-    for (const routePath of [...shellRoutes, "prompt-detail", "/diagnostics"] as const) {
-      test(`${routePath} renders without page overflow`, async ({ page }, testInfo) => {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${width}px ${theme} route matrix is accessible and overflow-free`, async ({
+      page,
+    }, testInfo) => {
+      await page.addInitScript(
+        (nextTheme) => localStorage.setItem("ai-series-theme", nextTheme),
+        theme,
+      );
+      await page.setViewportSize({ width, height: 900 });
+      const promptPath = await existingPromptPath(page);
+      await installEmptyApi(page);
+
+      for (const routePath of [...shellRoutes, promptPath, "/diagnostics"] as const) {
         const consoleErrors: string[] = [];
         page.on("console", (message) => {
           if (message.type() === "error") consoleErrors.push(message.text());
         });
-        await page.setViewportSize({ width, height: 900 });
-        const path = routePath === "prompt-detail" ? await existingPromptPath(page) : routePath;
-        await installEmptyApi(page);
-        const response = await page.goto(path);
+        const response = await page.goto(routePath);
 
-        if (path === "/diagnostics" && response?.status() === 404) {
+        if (routePath === "/diagnostics" && response?.status() === 404) {
           await expect(page.getByText("This page could not be found")).toBeVisible();
           await assertNoPageOverflow(page);
-          return;
+          continue;
         }
 
-        const main = path === "/diagnostics" ? page.locator("main") : page.locator("#main-content");
+        const main =
+          routePath === "/diagnostics" ? page.locator("main") : page.locator("#main-content");
         await expect(main).toBeVisible();
         await expect(page.locator("h1")).toHaveCount(1);
+        await expect(page.locator("html")).toHaveClass(theme === "dark" ? /dark/ : /^(?!.*dark)/);
         await assertNoPageOverflow(page);
 
-        if (path !== "/diagnostics" && width <= 768) await assertMobileKeyboardJourney(page);
-        if (width === 375) await assertTouchTargets(page);
         const needsVisualEvidence =
           width === 1440 ||
           (([375, 768] as number[]).includes(width) &&
-            ["/series", "/assets", "/studio/test-plan"].includes(path));
+            ["/series", "/assets", "/prompts", "/studio/test-plan"].includes(routePath));
         if (needsVisualEvidence) {
-          await testInfo.attach(`visual-${width}-${path.replaceAll("/", "-") || "root"}`, {
-            body: await page.screenshot({ fullPage: true }),
-            contentType: "image/png",
-          });
+          await testInfo.attach(
+            `visual-${theme}-${width}-${routePath.replaceAll("/", "-") || "root"}`,
+            {
+              body: await page.screenshot({ fullPage: true }),
+              contentType: "image/png",
+            },
+          );
         }
-        expect(consoleErrors, `${path} emitted browser console errors`).toEqual([]);
-      });
-    }
-  });
+
+        if (routePath !== "/diagnostics" && width <= 768) await assertMobileKeyboardJourney(page);
+        if (width === 375) await assertTouchTargets(page);
+        const results = await new AxeBuilder({ page })
+          .exclude("img, video, audio")
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+          .analyze();
+        expect(
+          results.violations,
+          `${width}px ${theme} ${routePath}: ${JSON.stringify(results.violations)}`,
+        ).toEqual([]);
+        expect(consoleErrors, `${routePath} emitted browser console errors`).toEqual([]);
+      }
+    });
+  }
 }
+
+test("sidebar motion pill is transient while aria-current remains canonical", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installEmptyApi(page);
+  await page.goto("/series");
+
+  const seriesLink = page.getByRole("link", { name: "Series", exact: true });
+  const assetsLink = page.getByRole("link", { name: "Assets", exact: true });
+  await expect(seriesLink).toHaveAttribute("aria-current", "page");
+  await expect(assetsLink).not.toHaveAttribute("aria-current", "page");
+
+  await assetsLink.hover();
+  await expect(page.locator('[data-slot="shared-layout-background-pill"]')).toBeVisible();
+  await expect(seriesLink).toHaveAttribute("aria-current", "page");
+
+  await page.mouse.move(1200, 600);
+  await assetsLink.focus();
+  await expect(page.locator('[data-slot="shared-layout-background-pill"]')).toBeVisible();
+  await page.mouse.move(1200, 600);
+  await expect(page.locator('[data-slot="shared-layout-background-pill"]')).toBeVisible();
+  await expect(seriesLink).toHaveAttribute("aria-current", "page");
+});
+
+test("long series content remains contained", async ({ page }) => {
+  const longName = `The ${"Very Long Chronicle ".repeat(14)}`;
+  await installEmptyApi(page);
+  await page.route("**/api/series", async (route) =>
+    json(route, { series: [{ id: "long-series", name: longName, status: "active" }] }),
+  );
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/series");
+  await expect(page.getByText(longName)).toBeVisible();
+  await assertNoPageOverflow(page);
+});
 
 test("Series separates load error, retry, and empty state", async ({ page }) => {
   let requests = 0;
@@ -914,6 +974,7 @@ test("every primary route exposes a complete visible keyboard focus path", async
             const rect = element.getBoundingClientRect();
             const style = getComputedStyle(element);
             return (
+              element.getRootNode() === document &&
               element instanceof HTMLElement &&
               element.tabIndex >= 0 &&
               element.getAttribute("role") !== "tablist" &&
@@ -959,34 +1020,6 @@ test("every primary route exposes a complete visible keyboard focus path", async
     }
 
     expect([...seen].sort(), `${path} has unreachable keyboard controls`).toEqual(expected.sort());
-  }
-});
-
-test("all primary surfaces meet critical accessibility rules in both themes", async ({
-  page,
-}, testInfo) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  const promptPath = await existingPromptPath(page);
-  await installEmptyApi(page);
-
-  for (const theme of ["light", "dark"] as const) {
-    for (const path of [...shellRoutes, promptPath, "/diagnostics"]) {
-      await page.goto(path);
-      if (path === "/diagnostics" && (await page.locator("h1").count()) === 0) continue;
-      await page.evaluate((nextTheme) => localStorage.setItem("ai-series-theme", nextTheme), theme);
-      await page.reload();
-      const results = await new AxeBuilder({ page })
-        .exclude("img, video, audio")
-        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-        .analyze();
-      expect(results.violations, `${theme} ${path}: ${JSON.stringify(results.violations)}`).toEqual(
-        [],
-      );
-      await testInfo.attach(`visual-${theme}-${path.replaceAll("/", "-") || "root"}`, {
-        body: await page.screenshot({ fullPage: true }),
-        contentType: "image/png",
-      });
-    }
   }
 });
 
@@ -1065,4 +1098,18 @@ test("reduced motion collapses interface transitions", async ({ page }) => {
     });
   expect(Number.parseFloat(durations.animation)).toBeLessThanOrEqual(0.00001);
   expect(Number.parseFloat(durations.transition)).toBeLessThanOrEqual(0.00001);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/series");
+  await page.getByRole("link", { name: "Assets", exact: true }).focus();
+  const reducedPill = page.locator(
+    '[data-slot="shared-layout-background-pill"][data-reduced-motion="true"]',
+  );
+  await expect(reducedPill).toBeVisible();
+  const reducedMotionState = await reducedPill.evaluate((element) => ({
+    opacity: getComputedStyle(element.parentElement!).opacity,
+    runningAnimations: element
+      .parentElement!.getAnimations({ subtree: true })
+      .filter((animation) => animation.playState === "running").length,
+  }));
+  expect(reducedMotionState).toEqual({ opacity: "1", runningAnimations: 0 });
 });

@@ -263,7 +263,7 @@ export default function OperationsPage() {
   const hasLoadErrors = Object.keys(loadErrors).length > 0;
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-5">
       <PageHeader
         eyebrow="Production control"
         title="Operations"
@@ -308,7 +308,7 @@ export default function OperationsPage() {
         </InlineNotice>
       ) : null}
 
-      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.75fr)]">
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.75fr)]">
         <SectionPanel
           title="Job health"
           description="Live workload, terminal outcomes, retries, and processing latency."
@@ -341,12 +341,10 @@ export default function OperationsPage() {
             />
           ) : null}
           {health && health.total > 0 ? (
-            <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(11rem,0.7fr)_minmax(0,1.3fr)] lg:items-center">
-              <div className="border-b pb-5 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
-                <p className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                  Success rate
-                </p>
-                <p className="mt-2 font-display text-5xl font-medium tracking-tight tabular-nums">
+            <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(11rem,0.7fr)_minmax(0,1.3fr)] lg:items-center">
+              <div className="border-b pb-5 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-5">
+                <p className="text-sm font-medium text-muted-foreground">Success rate</p>
+                <p className="mt-2 font-mono text-4xl font-semibold tracking-tight tabular-nums">
                   {formatPercent(health.successRate)}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -364,9 +362,9 @@ export default function OperationsPage() {
                   ["Error rate", formatPercent(health.errorRate)],
                   ["Retry rate", formatPercent(health.retryRate)],
                 ].map(([label, value]) => (
-                  <div key={label} className="min-w-0 border-l-2 border-border pl-3">
+                  <div key={label} className="min-w-0">
                     <dt className="text-xs text-muted-foreground">{label}</dt>
-                    <dd className="mt-1 text-lg font-semibold tabular-nums">{value}</dd>
+                    <dd className="mt-1 font-mono text-base font-semibold tabular-nums">{value}</dd>
                   </div>
                 ))}
               </dl>
@@ -401,7 +399,7 @@ export default function OperationsPage() {
             <div className="space-y-5">
               <div>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="font-display text-4xl font-medium tracking-tight tabular-nums">
+                  <p className="font-mono text-3xl font-semibold tracking-tight tabular-nums">
                     {usd.format(budget.totalCost)}
                   </p>
                   <p className="text-sm text-muted-foreground">of {usd.format(budget.limitUsd)}</p>
@@ -473,7 +471,7 @@ export default function OperationsPage() {
               const isCleaning = pendingAction === "cleanup";
 
               return (
-                <li key={job.id} className="min-w-0 rounded-xl border bg-muted/15 p-4 sm:p-5">
+                <li key={job.id} className="min-w-0 rounded-lg border bg-card p-4 sm:p-5">
                   <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -533,7 +531,7 @@ export default function OperationsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm">
+                  <div className="mt-4 border-l-2 border-destructive bg-destructive/5 px-3 py-2 text-sm">
                     <p className="flex items-start gap-2 break-words text-destructive">
                       <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                       <span>{job.error ?? "No error message was recorded for this job."}</span>
@@ -549,15 +547,13 @@ export default function OperationsPage() {
                   ) : null}
 
                   <div className="mt-4">
-                    <h4 className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                      Attempt trace
-                    </h4>
+                    <h4 className="text-sm font-medium">Attempt trace</h4>
                     {attempts.length === 0 ? (
                       <p className="mt-2 text-sm text-muted-foreground">
                         No attempts were recorded.
                       </p>
                     ) : (
-                      <ol className="mt-2 divide-y rounded-lg border bg-background">
+                      <ol className="mt-2 divide-y border-y">
                         {attempts.map((attempt) => (
                           <li
                             key={attempt.attemptNumber}
@@ -682,7 +678,7 @@ export default function OperationsPage() {
         {overview ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-display text-3xl font-medium tabular-nums">
+              <p className="font-mono text-3xl font-semibold tabular-nums">
                 {overview.orphanCount}
               </p>
               <p className="text-sm text-muted-foreground">orphan outputs detected</p>

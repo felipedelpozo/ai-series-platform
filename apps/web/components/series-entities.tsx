@@ -358,7 +358,7 @@ export function SeriesEntities({
               const entitySheets = sheets[entity.id] ?? [];
               const isOpening = busyAction === `open:${entity.id}`;
               return (
-                <li key={entity.id} className="min-w-0 rounded-xl border bg-card p-4 shadow-xs">
+                <li key={entity.id} className="min-w-0 rounded-lg border bg-card p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{entity.name}</p>
@@ -430,9 +430,7 @@ export function SeriesEntities({
 
                   {entityVersions.length > 0 ? (
                     <div className="mt-4 border-t pt-3">
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Versions
-                      </p>
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">Versions</p>
                       <ul className="space-y-2">
                         {entityVersions.map((version) => (
                           <li key={version.id} className="min-w-0 rounded-lg border bg-muted/20">
@@ -472,7 +470,7 @@ export function SeriesEntities({
 
                   {entitySheets.length > 0 ? (
                     <div className="mt-4 border-t pt-3">
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">
                         Reference sheets
                       </p>
                       <ul className="space-y-3">

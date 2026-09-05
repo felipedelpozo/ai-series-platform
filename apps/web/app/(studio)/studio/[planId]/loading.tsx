@@ -7,9 +7,9 @@ export default function EpisodeStudioLoading() {
       role="status"
       aria-label="Loading episode studio"
     >
-      <Skeleton className="min-h-48 rounded-xl" />
-      <Skeleton className="min-h-[24rem] rounded-xl" />
-      <Skeleton className="min-h-64 rounded-xl" />
+      <Skeleton className="min-h-48 rounded-lg" />
+      <Skeleton className="min-h-[24rem] rounded-lg" />
+      <Skeleton className="min-h-64 rounded-lg" />
       <span className="sr-only">Loading scenes, preview and inspector</span>
     </div>
   );

@@ -167,7 +167,7 @@ export function SeriesTikTok({ seriesId }: { seriesId: string }) {
           </ul>
         )}
 
-        <div className="grid gap-4 rounded-xl border bg-muted/20 p-4 lg:grid-cols-[8rem_minmax(0,1fr)_auto] lg:items-end">
+        <div className="grid gap-4 rounded-lg border bg-muted/20 p-4 lg:grid-cols-[8rem_minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-2">
             <Label htmlFor="tiktok-episode-number">Episode</Label>
             <Input
@@ -254,7 +254,7 @@ export function SeriesTikTok({ seriesId }: { seriesId: string }) {
           <div className="grid gap-4 lg:grid-cols-2">
             <section
               aria-labelledby="associated-videos-heading"
-              className="min-w-0 rounded-xl border p-4"
+              className="min-w-0 rounded-lg border p-4"
             >
               <h5 id="associated-videos-heading" className="text-sm font-medium">
                 Associated videos
@@ -277,7 +277,7 @@ export function SeriesTikTok({ seriesId }: { seriesId: string }) {
             </section>
             <section
               aria-labelledby="engagement-imports-heading"
-              className="min-w-0 rounded-xl border p-4"
+              className="min-w-0 rounded-lg border p-4"
             >
               <h5 id="engagement-imports-heading" className="text-sm font-medium">
                 Engagement imports

@@ -192,7 +192,7 @@ export default function AccountsPage() {
       ) : null}
 
       {!token ? (
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.65fr)]">
+        <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.65fr)]">
           <SectionPanel
             title="Authenticate"
             description="Use an existing identity or create one before working with workspace-scoped production."
@@ -273,26 +273,26 @@ export default function AccountsPage() {
             title="Access boundary"
             description="Authentication is separate from production content."
           >
-            <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
-              <div className="flex gap-3">
-                <KeyRound className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <div className="divide-y text-sm leading-relaxed text-muted-foreground">
+              <div className="flex gap-3 pb-4">
+                <KeyRound className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <p>Your credentials establish the current identity for this browser session.</p>
               </div>
-              <div className="flex gap-3">
-                <Building2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+              <div className="flex gap-3 pt-4">
+                <Building2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <p>Workspace membership and roles are loaded only after authentication succeeds.</p>
               </div>
             </div>
           </SectionPanel>
         </div>
       ) : me ? (
-        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(15rem,0.7fr)_minmax(0,1.3fr)]">
+        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(15rem,0.7fr)_minmax(0,1.3fr)]">
           <SectionPanel
             title="Current identity"
             description="The authenticated identity for this session."
           >
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-full border bg-muted text-muted-foreground">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="grid size-8 shrink-0 place-items-center text-muted-foreground">
                 <UserRound className="size-4" aria-hidden="true" />
               </span>
               <div className="min-w-0">
@@ -347,12 +347,9 @@ export default function AccountsPage() {
                   description="Create the first workspace for this identity to establish a production context."
                 />
               ) : (
-                <ul className="grid min-w-0 gap-3 sm:grid-cols-2">
+                <ul className="min-w-0 divide-y border-y">
                   {me.workspaces.map((workspaceAccess) => (
-                    <li
-                      key={workspaceAccess.workspace.id}
-                      className="min-w-0 rounded-lg border bg-muted/15 p-4"
-                    >
+                    <li key={workspaceAccess.workspace.id} className="min-w-0 py-4">
                       <div className="flex min-w-0 items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="break-words text-sm font-semibold">

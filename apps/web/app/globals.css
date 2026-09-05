@@ -63,23 +63,6 @@
   }
 }
 
-@layer utilities {
-  .font-display {
-    font-family: var(--font-interface), ui-sans-serif, system-ui, sans-serif;
-  }
-  .continuity-line {
-    position: relative;
-  }
-  .continuity-line::before {
-    position: absolute;
-    inset-block: 0.75rem;
-    left: 0.3125rem;
-    width: 1px;
-    content: "";
-    background: linear-gradient(var(--primary), var(--border));
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
