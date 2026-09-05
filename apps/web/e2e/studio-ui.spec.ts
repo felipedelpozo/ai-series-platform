@@ -412,6 +412,175 @@ test("series creation is keyboard operable and preserves its request", async ({ 
   expect(requestBody).toEqual({ name: "The Night Archive" });
 });
 
+test("Series launcher exposes canonical setup facts in both themes and target widths", async ({
+  page,
+}, testInfo) => {
+  const series = {
+    id: "series-1",
+    name: "The Night Archive",
+    slug: "night-archive",
+    status: "active",
+  };
+  const bible = {
+    id: "bible-1",
+    version: 1,
+    isActive: true,
+    title: "The Night Archive",
+    premise: "A city rewrites itself after midnight.",
+    genre: "Thriller",
+    tone: "Tense",
+    audience: "Young adults",
+    format: "Vertical series",
+    language: "English",
+    episodeDuration: "60s",
+    narrativeRules: [],
+    visualStyle: "Noir",
+    canon: [],
+    prohibitions: [],
+    description: null,
+    source: "manual",
+  };
+
+  await installEmptyApi(page);
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/api/series" && route.request().method() === "GET") {
+      return json(route, { series: [series] });
+    }
+    if (url.pathname === "/api/series/series-1") {
+      return json(route, { series, bibles: [bible] });
+    }
+    if (url.pathname === "/api/entities") {
+      return json(route, {
+        entities: [
+          { id: "entity-1", type: "character", name: "Mara" },
+          { id: "entity-2", type: "character", name: "Ivo" },
+        ],
+      });
+    }
+    if (url.pathname === "/api/series/series-1/plans") {
+      return json(route, { plans: [{ id: "plan-1", isActive: true }] });
+    }
+    return route.fallback();
+  });
+
+  for (const width of [375, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/series");
+    await page.getByRole("button", { name: /The Night Archive/ }).click();
+    const setup = page.getByLabel("Series setup");
+    await expect(setup).toContainText("Canon active");
+    await expect(setup).toContainText("2 defined");
+    await expect(setup).toContainText("1 active");
+    await assertNoPageOverflow(page);
+    await testInfo.attach(`launcher-light-${width}`, {
+      body: await page.screenshot({ fullPage: true }),
+      contentType: "image/png",
+    });
+  }
+
+  await page.getByRole("button", { name: "Switch to dark theme" }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await testInfo.attach("launcher-dark-1440", {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+});
+
+test("Bible, entity, and episode AI details keep payload, busy state, and input after failure", async ({
+  page,
+}) => {
+  const series = {
+    id: "series-1",
+    name: "The Night Archive",
+    slug: "night-archive",
+    status: "active",
+  };
+  const payloads: Record<string, unknown> = {};
+  const postCounts = { bible: 0, entity: 0, plan: 0 };
+
+  await installEmptyApi(page);
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const method = route.request().method();
+    if (url.pathname === "/api/series" && method === "GET") {
+      return json(route, { series: [series] });
+    }
+    if (url.pathname === "/api/series/series-1" && method === "GET") {
+      return json(route, { series, bibles: [] });
+    }
+    if (url.pathname === "/api/entities" && method === "GET") {
+      return json(route, {
+        entities: [{ id: "entity-1", type: "character", name: "Mara" }],
+      });
+    }
+    if (url.pathname === "/api/series/series-1/plans" && method === "GET") {
+      return json(route, { plans: [] });
+    }
+    if (url.pathname === "/api/series/series-1/generate-bible" && method === "POST") {
+      postCounts.bible += 1;
+      payloads.bible = route.request().postDataJSON();
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      return json(route, { error: "Bible provider unavailable" }, 503);
+    }
+    if (url.pathname === "/api/entities/entity-1/generate" && method === "POST") {
+      postCounts.entity += 1;
+      payloads.entity = route.request().postDataJSON();
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      return json(route, { error: "Entity provider unavailable" }, 503);
+    }
+    if (url.pathname === "/api/series/series-1/plans" && method === "POST") {
+      postCounts.plan += 1;
+      payloads.plan = route.request().postDataJSON();
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      return json(route, { error: "Planner unavailable" }, 503);
+    }
+    return route.fallback();
+  });
+
+  await page.goto("/series");
+  await page.getByRole("button", { name: /The Night Archive/ }).click();
+
+  const bibleDetails = page.getByLabel(/Series details for AI/);
+  await bibleDetails.fill("A neon mystery with an unreliable narrator.");
+  await page.getByRole("button", { name: "Generate bible (AI)" }).evaluate((button) => {
+    (button as HTMLButtonElement).click();
+    (button as HTMLButtonElement).click();
+  });
+  await expect(page.getByRole("button", { name: "Generating bible…" })).toBeDisabled();
+  await expect(page.getByText("Action could not be completed")).toBeVisible();
+  await expect(bibleDetails).toHaveValue("A neon mystery with an unreliable narrator.");
+
+  await page.getByRole("tab", { name: "Entities" }).click();
+  const entityDetails = page.getByLabel(/Details for AI/);
+  await entityDetails.fill("Mara wears a red coat and never removes her gloves.");
+  await page.getByRole("button", { name: "Generate with AI" }).evaluate((button) => {
+    (button as HTMLButtonElement).click();
+    (button as HTMLButtonElement).click();
+  });
+  await expect(page.getByRole("button", { name: "Generating…", exact: true })).toBeDisabled();
+  await expect(page.getByText("Entity action failed")).toBeVisible();
+  await expect(entityDetails).toHaveValue("Mara wears a red coat and never removes her gloves.");
+
+  await page.getByRole("tab", { name: "Plans" }).click();
+  const planDetails = page.getByLabel(/Episode details for AI/);
+  await planDetails.fill("Mara discovers the archive beneath platform seven.");
+  await page.getByRole("button", { name: "Generate plan (AI)" }).evaluate((button) => {
+    (button as HTMLButtonElement).click();
+    (button as HTMLButtonElement).click();
+  });
+  await expect(page.getByRole("button", { name: "Generating plan…" })).toBeDisabled();
+  await expect(page.getByText("Plan action failed")).toBeVisible();
+  await expect(planDetails).toHaveValue("Mara discovers the archive beneath platform seven.");
+
+  expect(payloads).toEqual({
+    bible: { details: "A neon mystery with an unreliable narrator." },
+    entity: { details: "Mara wears a red coat and never removes her gloves." },
+    plan: { episodeNumber: 1, details: "Mara discovers the archive beneath platform seven." },
+  });
+  expect(postCounts).toEqual({ bible: 1, entity: 1, plan: 1 });
+});
+
 test("operations cleanup requires confirmation and preserves its request", async ({ page }) => {
   let cleanupCount = 0;
   await installEmptyApi(page);

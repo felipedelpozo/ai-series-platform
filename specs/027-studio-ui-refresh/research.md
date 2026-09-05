@@ -49,19 +49,20 @@ does not add a route, schema, provider behavior or product capability.
 **Alternatives considered**: Rewrite each screen as server components (changes request timing and
 ownership); add a new client data library (unnecessary dependency and behavior change).
 
-## Decision 4: Use an editorial production identity
+## Decision 4: Use a neutral shadcn production identity
 
-**Decision**: Use Newsreader sparingly for page display titles, Geist for interface text and Geist
-Mono for production metadata; use a mist/ink canvas with grease-pencil signal orange and semantic
-green/amber/red states. Reserve the continuity line for ordered domain sequences.
+**Decision**: Use Geist for the entire interface and Geist Mono only for production metadata. Use
+the standard neutral shadcn surface hierarchy in equivalent light/dark themes, reserving
+green/amber/red for real semantic states. On the launcher, show a single restrained setup rail whose
+values come from the active Bible, current entities and active plans.
 
-**Rationale**: The product is a control surface for serialized audiovisual production, not a generic
-analytics dashboard. Editorial type and timeline/provenance cues reinforce the work while restrained
-color preserves operational clarity.
+**Rationale**: User review found the initial warm/terracotta/serif direction over-designed and too
+far from the native shadcn foundation. Neutral surfaces improve continuity across the existing app,
+while the factual setup rail retains one domain-specific cue without inventing production state.
 
-**Alternatives considered**: Near-black/acid accent (common generated default and too theatrical);
-cream/serif/terracotta (another common default); neutral monochrome enterprise UI (competent but
-interchangeable).
+**Alternatives considered**: Keep the rejected editorial theme; add beUI/Motion for decorative
+effects (insufficient value for the added client dependency); use a generic entertainment shelf
+layout (poor fit for production tasks).
 
 ## Decision 5: Validate visual behavior as a contract
 

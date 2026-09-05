@@ -71,7 +71,13 @@ function EntityVersionData({ data }: { data: Record<string, unknown> }) {
   );
 }
 
-export function SeriesEntities({ seriesId }: { seriesId: string }) {
+export function SeriesEntities({
+  seriesId,
+  onEntitiesChanged,
+}: {
+  seriesId: string;
+  onEntitiesChanged?: () => void;
+}) {
   const [type, setType] = useState("character");
   const [entities, setEntities] = useState<Entity[]>([]);
   const [name, setName] = useState("");
@@ -83,6 +89,7 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const loadRequestRef = useRef(0);
+  const generationActionRef = useRef(new Set<string>());
   const sheetActionRef = useRef(new Set<string>());
   const sheetAttemptRef = useRef(new Map<string, string>());
 
@@ -130,6 +137,7 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
       setName("");
       setDataJson("{}");
       await load();
+      onEntitiesChanged?.();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create entity");
     } finally {
@@ -158,6 +166,8 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
   }
 
   async function generate(entityId: string) {
+    if (generationActionRef.current.has(entityId)) return;
+    generationActionRef.current.add(entityId);
     setBusyAction(`generate:${entityId}`);
     setError(null);
     try {
@@ -172,6 +182,7 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
     } catch (generationError) {
       setError(generationError instanceof Error ? generationError.message : "Generation failed");
     } finally {
+      generationActionRef.current.delete(entityId);
       setBusyAction(null);
     }
   }
@@ -331,13 +342,15 @@ export function SeriesEntities({ seriesId }: { seriesId: string }) {
 
         {loading ? (
           <LoadingSkeleton rows={2} />
-        ) : error ? null : entities.length === 0 ? (
-          <EmptyState
-            icon={Boxes}
-            title={`No ${type}s yet`}
-            description="Create the first entity to establish a reusable continuity reference for this series."
-            compact
-          />
+        ) : entities.length === 0 ? (
+          error ? null : (
+            <EmptyState
+              icon={Boxes}
+              title={`No ${type}s yet`}
+              description="Create the first entity to establish a reusable continuity reference for this series."
+              compact
+            />
+          )
         ) : (
           <ul className="grid gap-3 xl:grid-cols-2" aria-label={`${type} entities`}>
             {entities.map((entity) => {

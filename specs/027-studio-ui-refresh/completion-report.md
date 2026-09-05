@@ -2,10 +2,15 @@
 
 ## Outcome
 
-The existing studio has been rebuilt as a responsive editorial production desk using the shared
+The existing studio has been rebuilt as a responsive production workspace using the shared
 shadcn/Radix foundation. All existing destinations remain available, production state is visually
-dominant, light/dark themes and reduced motion are supported, and the continuity line is reserved
-for real ordered production sequences.
+dominant, and light/dark themes and reduced motion are supported. Following launcher review, the
+warm editorial layer was replaced by native neutral shadcn tokens and Geist typography. `/series`
+now uses a bounded card grid, a full-width selected workspace and a factual canonical setup rail.
+
+The recent creator-supplied generation details for Bible, Entity and Episode Plan were also
+restored from their source change and integrated semantically with this branch. They retain exact
+payloads and local input on failure, and Entity/Plan now share Bible's synchronous duplicate guard.
 
 No route, permission, database schema or product capability was added. The only behavior hardening
 outside view code is the compatible idempotency path recorded in Clarifications: active paid jobs

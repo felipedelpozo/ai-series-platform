@@ -137,7 +137,13 @@ function PlanDetails({
   );
 }
 
-export function SeriesPlans({ seriesId }: { seriesId: string }) {
+export function SeriesPlans({
+  seriesId,
+  onPlansChanged,
+}: {
+  seriesId: string;
+  onPlansChanged?: () => void;
+}) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [entityNames, setEntityNames] = useState<Record<string, string>>({});
   const [episode, setEpisode] = useState(1);
@@ -149,6 +155,7 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
   const [progress, setProgress] = useState<Record<string, Progress>>({});
   const loadRequestRef = useRef(0);
   const entityRequestRef = useRef(0);
+  const planGenerationRef = useRef(false);
 
   const load = useCallback(async () => {
     const request = ++loadRequestRef.current;
@@ -199,6 +206,8 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
   }, [seriesId]);
 
   async function generate() {
+    if (planGenerationRef.current) return;
+    planGenerationRef.current = true;
     setBusyAction("generate-plan");
     setError(null);
     try {
@@ -210,9 +219,11 @@ export function SeriesPlans({ seriesId }: { seriesId: string }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
       await load();
+      onPlansChanged?.();
     } catch (generationError) {
       setError(generationError instanceof Error ? generationError.message : "Generation failed");
     } finally {
+      planGenerationRef.current = false;
       setBusyAction(null);
     }
   }

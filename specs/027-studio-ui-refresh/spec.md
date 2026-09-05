@@ -33,6 +33,18 @@ flows."
   representativos para cada familia de interacción, estado y riesgo. La disponibilidad de estados en
   superficies anidadas se comprueba exhaustivamente por contrato de source y por navegador en cada
   familia de pantalla principal.
+- Q: ¿Cómo se corrige la dirección visual del launcher tras rechazar la propuesta editorial? → A:
+  Volver a la base neutral nativa de shadcn, usar Geist como única tipografía de interfaz, mantener
+  temas claro y oscuro equivalentes y reorganizar `/series` como launcher compacto en grid sobre un
+  detalle de ancho completo. El único rail muestra hechos canónicos de setup —Bible activa,
+  entidades existentes y planes activos— sin inferir una secuencia de dominio ni un estado de
+  producción nuevo.
+- Q: ¿Debe incorporarse beUI para animar el launcher? → A: No. El rail factual se resuelve con CSS
+  y respeta `prefers-reduced-motion`; añadir Motion/beUI para un único gesto no aporta suficiente
+  valor y aumentaría el JavaScript cliente y la superficie de mantenimiento.
+- Q: ¿Qué ocurre con los inputs recientes para orientar la generación? → A: Se preservan y se
+  validan de extremo a extremo los detalles opcionales de Bible, Entity y Episode Plan, con máximo
+  4.000 caracteres, payload compatible, bloqueo síncrono de duplicados y retención tras error.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -161,8 +173,9 @@ incluidos listas, paneles de detalle, filtros, formularios, navegación y el ins
   assets aportados o generados, y las transiciones DEBEN respetar movimiento reducido.
 - **FR-017**: La aplicación DEBE evitar overflow horizontal de página en 375, 768, 1024, 1280 y
   1440 px; los datos largos DEBEN truncarse, envolver o desplazarse dentro de su región controlada.
-- **FR-018**: La dirección visual DEBE ser sobria, editorial y propia del dominio de producción
-  audiovisual; la línea de continuidad solo DEBE aparecer cuando codifique progreso o secuencia real.
+- **FR-018**: La dirección visual DEBE ser sobria, neutral y reconociblemente nativa de shadcn; un
+  rail solo DEBE aparecer cuando muestre hechos reales y explícitamente nombrados, sin presentar
+  una secuencia opcional como workflow canónico.
 - **FR-019**: Iconografía, radios, color, tipografía, espacios y elevación DEBEN derivarse de tokens
   semánticos compartidos y mantenerse consistentes entre pantallas.
 - **FR-020**: Los cambios DEBEN incluir evidencia automatizada y visual suficiente para demostrar
@@ -204,6 +217,8 @@ incluidos listas, paneles de detalle, filtros, formularios, navegación y el ins
 - Los componentes y Blocks oficiales del sistema visual actual se adaptan a la arquitectura y datos
   reales; se eliminan dependencias o copy de demostración.
 - La preferencia de tema existente se conserva y se amplía mediante tokens semánticos compatibles.
+- `/series` es el launcher equivalente porque la ruta raíz redirige allí; no se crea una portada
+  paralela ni se duplican fuentes de verdad.
 
 ## Out of Scope
 

@@ -10,7 +10,7 @@ Refresh the complete existing studio as a coherent, production-ready interface w
 all domain behavior and API contracts. Extend `@ai-series/ui` with official shadcn-compatible
 primitives, adapt the official inset/collapsible Sidebar Block composition to the real navigation,
 introduce reusable product patterns for page headers, state feedback and status labels, then
-refactor every studio route around the same editorial production language. Validate routes and
+refactor every studio route around the same neutral production language. Validate routes and
 interactions with automated tests plus browser evidence at 375, 768, 1024, 1280 and 1440 px.
 
 ## Technical Context
@@ -70,23 +70,22 @@ Post-design re-check: **PASS**. The design introduces no constitutional exceptio
 
 ### Subject, audience and job
 
-- **Subject**: an editorial production desk for AI-native serialized video.
+- **Subject**: a focused production workspace for AI-native serialized video.
 - **Audience**: creators and technical operators supervising costly, asynchronous production.
 - **Single job**: make the current production state and the next safe action unmistakable.
 
 ### Tokens
 
-- `ink` `#111318`: primary light-theme text and dark-theme foundation.
-- `film` `#20242C`: elevated dark surfaces and navigation structure.
-- `mist` `#F4F5F2`: quiet light canvas.
-- `signal` `#D95D39`: scarce primary/action accent inspired by editorial grease pencil.
-- `success` `#277A5B`: approved/healthy state.
-- `warning` `#A36712`: blocked/attention state.
+- Neutral shadcn background, foreground, card, popover, muted, border and ring tokens provide the
+  same hierarchy in white/light and near-black/dark themes.
+- Primary actions remain monochrome; `success`, `warning` and `destructive` are reserved for real
+  semantic states.
+- Sidebar tokens follow the active theme instead of forcing a dark navigation rail in light mode.
 
-Typography uses Newsreader for restrained editorial display titles, Geist for body and controls,
-and Geist Mono for IDs, status and production data. The single signature element is the
-**continuity line**: a vertical sequence rail used only where order/progress is real (scenes,
-production sections, attempts), never as free decoration.
+Typography uses Geist for headings, body and controls, and Geist Mono only for IDs and technical
+metadata. The launcher signature is a compact **production setup rail** sourced from the selected
+series' active Bible, entity collection and active plans. It presents those values as facts, not as
+mandatory workflow transitions or a second production-state model.
 
 ### Layout comparison
 
@@ -98,7 +97,7 @@ Rejected generic dashboard
 │          │ [table]                           │
 └──────────┴────────────────────────────────────┘
 
-Selected editorial desk
+Selected production workspace
 ┌──────────┬────────────────────────────────────┐
 │ grouped  │ context / purpose       main action│
 │ studio   ├────────────────────────────────────┤
@@ -118,11 +117,11 @@ Mobile
 
 ### Self-critique and revision
 
-The first concept risked becoming another dark SaaS dashboard with an orange accent. It was revised
-to a predominantly mist/ink editorial surface in light mode, with color reserved for action and
-state. Large stat-card grids and decorative gradients were removed. The continuity line remains as
-the single expressive device because sequence, provenance and state progression are intrinsic to
-episode production.
+The first concept overexpressed brand through a warm canvas, terracotta actions, serif headings and
+a permanently dark light-theme sidebar. User review rejected that launcher. The revision restores
+the native shadcn neutral foundation, removes decorative typography/color, constrains the series
+grid and places the selected workspace at full width. No beUI/Motion dependency is added; the
+factual setup rail uses existing CSS and the global reduced-motion policy.
 
 ## Reuse and Component Strategy
 

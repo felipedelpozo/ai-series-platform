@@ -55,15 +55,13 @@ export function AppSidebar({
           collapsed && !mobile && "justify-center px-2",
         )}
       >
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
           <Sparkles className="size-4" aria-hidden="true" />
         </span>
         {collapsed && !mobile ? null : (
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold tracking-tight">AI Series</p>
-            <p className="truncate font-mono text-[0.625rem] uppercase tracking-[0.18em] text-sidebar-foreground/70">
-              Production desk
-            </p>
+            <p className="truncate text-xs text-sidebar-foreground/65">Production desk</p>
           </div>
         )}
       </div>
@@ -73,9 +71,7 @@ export function AppSidebar({
           {(["Create", "Manage"] as const).map((group) => (
             <div key={group} className="mb-5 last:mb-0">
               {collapsed && !mobile ? null : (
-                <p className="mb-2 px-2 font-mono text-[0.625rem] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/70">
-                  {group}
-                </p>
+                <p className="mb-2 px-2 text-xs font-medium text-sidebar-foreground/60">{group}</p>
               )}
               <ul className="space-y-1">
                 {studioNavigation
@@ -91,7 +87,7 @@ export function AppSidebar({
                         className={cn(
                           "group flex min-h-10 items-center gap-3 rounded-md px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-sidebar-primary",
                           active
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_2px_0_0_var(--sidebar-primary)]"
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
                             : "text-sidebar-foreground/68 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
                           collapsed && !mobile && "justify-center px-2",
                         )}

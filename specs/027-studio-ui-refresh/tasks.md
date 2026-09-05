@@ -34,7 +34,7 @@
 active location, route purpose, theme control and every destination remain available without page
 overflow.
 
-- [x] T011 [US1] Add editorial interface fonts and application metadata in
+- [x] T011 [US1] Add interface fonts and application metadata in
       `apps/web/app/layout.tsx`
 - [x] T012 [US1] Adapt the official shadcn inset/collapsible Sidebar Block into a responsive studio
       shell in `apps/web/components/studio-shell.tsx`, `apps/web/components/app-sidebar.tsx` and
@@ -103,6 +103,20 @@ px with no page overflow, clipped menus or unreachable actions.
       the affected `apps/web/`, `packages/ui/` and `specs/027-studio-ui-refresh/` paths
 - [x] T031 Run `bun test`, `bun run typecheck`, `bun run lint`, `bun run build`,
       `bun run format:check`, the full browser matrix and `git diff --check`, then run convergence
+
+## Phase 7: Launcher correction and recovered generation context
+
+- [x] T032 Restore the recent Bible, Entity and Episode Plan `details` inputs, API/domain prompt
+      composition, immutable prompt snapshots and full revision detail views without losing the
+      Feature 027 async guards or visual structure
+- [x] T033 Replace the rejected warm editorial layer with neutral shadcn light/dark tokens, Geist
+      typography and native component proportions without adding beUI or Motion
+- [x] T034 Recompose `/series` as a bounded responsive grid plus full-width selected workspace and
+      add a factual canonical setup rail with refresh after entity/plan creation
+- [x] T035 Add synchronous duplicate guards for Entity and Episode Plan AI details generation and
+      browser coverage for exact payload, pending state and input retention after failure
+- [ ] T036 Capture fresh launcher evidence at 375, 768 and 1440 px in light/dark, run focused and
+      full validation, remediate independent review and update the completion report
 
 ## Dependencies
 

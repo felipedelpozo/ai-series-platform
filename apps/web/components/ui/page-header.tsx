@@ -17,18 +17,14 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "flex flex-col gap-5 border-b pb-6 sm:flex-row sm:items-end sm:justify-between",
+        "flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between",
         className,
       )}
     >
       <div className="min-w-0 max-w-3xl">
-        <p className="mb-2 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-primary">
-          {eyebrow}
-        </p>
-        <h1 className="font-display text-3xl font-medium leading-none tracking-[-0.025em] sm:text-4xl">
-          {title}
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <p className="mb-1.5 text-xs font-medium text-muted-foreground">{eyebrow}</p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           {description}
         </p>
       </div>

@@ -13,6 +13,7 @@ import {
   Textarea,
 } from "@ai-series/ui";
 import { BookOpen, LibraryBig } from "lucide-react";
+import { ProductionSetupRail } from "@/components/production-progress-rail";
 import { SeriesDecisions } from "@/components/series-decisions";
 import { SeriesEntities } from "@/components/series-entities";
 import { SeriesLoops } from "@/components/series-loops";
@@ -118,6 +119,8 @@ export default function SeriesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Series | null>(null);
   const [bibles, setBibles] = useState<Bible[]>([]);
+  const [entityCount, setEntityCount] = useState<number | null>(null);
+  const [planCount, setPlanCount] = useState<number | null>(null);
   const [bibleJson, setBibleJson] = useState("{}");
   const [bibleDetails, setBibleDetails] = useState("");
   const [listLoading, setListLoading] = useState(true);
@@ -133,6 +136,7 @@ export default function SeriesPage() {
   const selectedIdRef = useRef<string | null>(null);
   const listRequestRef = useRef(0);
   const detailRequestRef = useRef(0);
+  const summaryRequestRef = useRef(0);
   const actionRequestRef = useRef(0);
   const actionBusyRef = useRef<string | null>(null);
 
@@ -158,39 +162,74 @@ export default function SeriesPage() {
     }
   }, []);
 
-  const open = useCallback(async (id: string, preserveAction = false) => {
-    const requestId = ++detailRequestRef.current;
-    if (!preserveAction) {
-      actionRequestRef.current += 1;
-      setPendingAction(null);
+  const loadSeriesSummary = useCallback(async (id: string) => {
+    const requestId = ++summaryRequestRef.current;
+    const [entitiesResult, plansResult] = await Promise.allSettled([
+      fetch(`/api/entities?seriesId=${id}`).then((response) =>
+        response.ok ? readResponseData(response) : ({} as Record<string, unknown>),
+      ),
+      fetch(`/api/series/${id}/plans`).then((response) =>
+        response.ok ? readResponseData(response) : ({} as Record<string, unknown>),
+      ),
+    ]);
+    if (
+      !mountedRef.current ||
+      selectedIdRef.current !== id ||
+      requestId !== summaryRequestRef.current
+    ) {
+      return;
     }
-    selectedIdRef.current = id;
-    setSelectedId(id);
-    setSelected(null);
-    setBibles([]);
-    setDetailLoading(true);
-    setDetailError(null);
-    setDetailMessage(null);
-
-    try {
-      const response = await fetch(`/api/series/${id}`);
-      const data = await readResponseData(response);
-      if (!response.ok) throw new Error(responseError(data, "Failed to load series details"));
-      if (!data.series || typeof data.series !== "object" || !Array.isArray(data.bibles)) {
-        throw new Error("Series detail response was not valid");
-      }
-      if (mountedRef.current && requestId === detailRequestRef.current) {
-        setSelected(data.series as Series);
-        setBibles(data.bibles as Bible[]);
-      }
-    } catch (error) {
-      if (mountedRef.current && requestId === detailRequestRef.current) {
-        setDetailError(error instanceof Error ? error.message : "Failed to load series details");
-      }
-    } finally {
-      if (mountedRef.current && requestId === detailRequestRef.current) setDetailLoading(false);
-    }
+    const entitiesData = entitiesResult.status === "fulfilled" ? entitiesResult.value : {};
+    const plansData = plansResult.status === "fulfilled" ? plansResult.value : {};
+    setEntityCount(Array.isArray(entitiesData.entities) ? entitiesData.entities.length : null);
+    setPlanCount(
+      Array.isArray(plansData.plans)
+        ? plansData.plans.filter(
+            (plan) => typeof plan === "object" && plan !== null && plan.isActive === true,
+          ).length
+        : null,
+    );
   }, []);
+
+  const open = useCallback(
+    async (id: string, preserveAction = false) => {
+      const requestId = ++detailRequestRef.current;
+      if (!preserveAction) {
+        actionRequestRef.current += 1;
+        setPendingAction(null);
+      }
+      selectedIdRef.current = id;
+      setSelectedId(id);
+      setSelected(null);
+      setBibles([]);
+      setEntityCount(null);
+      setPlanCount(null);
+      setDetailLoading(true);
+      setDetailError(null);
+      setDetailMessage(null);
+
+      try {
+        const response = await fetch(`/api/series/${id}`);
+        const data = await readResponseData(response);
+        if (!response.ok) throw new Error(responseError(data, "Failed to load series details"));
+        if (!data.series || typeof data.series !== "object" || !Array.isArray(data.bibles)) {
+          throw new Error("Series detail response was not valid");
+        }
+        if (mountedRef.current && requestId === detailRequestRef.current) {
+          setSelected(data.series as Series);
+          setBibles(data.bibles as Bible[]);
+          void loadSeriesSummary(id);
+        }
+      } catch (error) {
+        if (mountedRef.current && requestId === detailRequestRef.current) {
+          setDetailError(error instanceof Error ? error.message : "Failed to load series details");
+        }
+      } finally {
+        if (mountedRef.current && requestId === detailRequestRef.current) setDetailLoading(false);
+      }
+    },
+    [loadSeriesSummary],
+  );
 
   useEffect(() => {
     mountedRef.current = true;
@@ -200,6 +239,7 @@ export default function SeriesPage() {
       mountedRef.current = false;
       listRequestRef.current += 1;
       detailRequestRef.current += 1;
+      summaryRequestRef.current += 1;
       actionRequestRef.current += 1;
     };
   }, [loadSeries]);
@@ -355,21 +395,21 @@ export default function SeriesPage() {
         description="Choose a series, establish its canon and move through each production layer from story foundations to audience feedback."
       />
 
-      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] lg:items-start">
+      <div className="flex min-w-0 flex-col gap-6">
         <SectionPanel
           title="Series library"
-          description="Select the production context you want to develop."
-          className="min-w-0 lg:sticky lg:top-6"
+          description="Create or choose the production context you want to develop."
+          className="min-w-0"
         >
           <div className="space-y-5">
             <form
-              className="space-y-3 border-b pb-5"
+              className="flex flex-col gap-3 border-b pb-5 sm:flex-row sm:flex-wrap sm:items-end"
               onSubmit={(event) => {
                 event.preventDefault();
                 void create();
               }}
             >
-              <div className="space-y-2">
+              <div className="min-w-0 flex-1 space-y-2">
                 <Label htmlFor="series-name">Series name</Label>
                 <Input
                   id="series-name"
@@ -385,20 +425,22 @@ export default function SeriesPage() {
                   disabled={createBusy}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={createBusy}>
+              <Button type="submit" className="w-full sm:w-auto" disabled={createBusy}>
                 {createBusy ? "Creating series…" : "Create series"}
               </Button>
               {createError ? (
-                <div id="series-create-error">
+                <div id="series-create-error" className="sm:basis-full">
                   <InlineNotice title="Series was not created" variant="destructive">
                     {createError} Your name is still here so you can try again.
                   </InlineNotice>
                 </div>
               ) : null}
               {createMessage ? (
-                <InlineNotice title="Series created" variant="success">
-                  {createMessage}
-                </InlineNotice>
+                <div className="sm:basis-full">
+                  <InlineNotice title="Series created" variant="success">
+                    {createMessage}
+                  </InlineNotice>
+                </div>
               ) : null}
             </form>
 
@@ -431,7 +473,7 @@ export default function SeriesPage() {
 
             {!listLoading && !listError && seriesList.length > 0 ? (
               <ul
-                className="max-h-[32rem] space-y-2 overflow-y-auto pr-1"
+                className="grid max-h-[24rem] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3"
                 aria-label="Available series"
               >
                 {seriesList.map((series) => {
@@ -446,11 +488,11 @@ export default function SeriesPage() {
                         }}
                         aria-pressed={isSelected}
                         aria-controls="series-detail"
-                        className="flex min-h-14 w-full min-w-0 items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-primary/45 aria-pressed:bg-primary/8"
+                        className="flex min-h-20 w-full min-w-0 items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-left outline-none transition-[border-color,box-shadow] hover:border-foreground/25 hover:shadow-sm focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 aria-pressed:border-foreground aria-pressed:ring-1 aria-pressed:ring-foreground"
                       >
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-medium">{series.name}</span>
-                          <span className="block truncate font-mono text-[0.6875rem] text-muted-foreground">
+                          <span className="mt-1 block truncate font-mono text-xs text-muted-foreground">
                             {series.slug}
                           </span>
                         </span>
@@ -528,6 +570,20 @@ export default function SeriesPage() {
                     {detailMessage}
                   </InlineNotice>
                 ) : null}
+
+                <div className="rounded-lg border bg-muted/20 p-4">
+                  <div className="mb-4">
+                    <h3 className="text-sm font-medium">Production setup</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Live summary of the selected series&apos; canonical inputs.
+                    </p>
+                  </div>
+                  <ProductionSetupRail
+                    hasActiveBible={bibles.some((bible) => bible.isActive)}
+                    entityCount={entityCount}
+                    planCount={planCount}
+                  />
+                </div>
 
                 <Tabs key={selected.id} defaultValue="bible" className="min-w-0">
                   <TabsList aria-label="Series production sections">
@@ -735,13 +791,19 @@ export default function SeriesPage() {
                   </TabsContent>
 
                   <TabsContent value="entities" className="min-w-0 overflow-x-auto">
-                    <SeriesEntities seriesId={selected.id} />
+                    <SeriesEntities
+                      seriesId={selected.id}
+                      onEntitiesChanged={() => void loadSeriesSummary(selected.id)}
+                    />
                   </TabsContent>
                   <TabsContent value="story-state" className="min-w-0 overflow-x-auto">
                     <SeriesStoryState seriesId={selected.id} />
                   </TabsContent>
                   <TabsContent value="plans" className="min-w-0 overflow-x-auto">
-                    <SeriesPlans seriesId={selected.id} />
+                    <SeriesPlans
+                      seriesId={selected.id}
+                      onPlansChanged={() => void loadSeriesSummary(selected.id)}
+                    />
                   </TabsContent>
                   <TabsContent value="decisions" className="min-w-0 overflow-x-auto">
                     <SeriesDecisions seriesId={selected.id} />
