@@ -1,0 +1,24 @@
+{
+  "name": "@ai-series/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@ai-series/config": "workspace:*",
+    "@ai-series/db": "workspace:*",
+    "@ai-series/generation": "workspace:*",
+    "@ai-series/jobs": "workspace:*",
+    "@ai-series/ops": "workspace:*",
+    "dotenv": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/bun": "catalog:"
+  }
+}

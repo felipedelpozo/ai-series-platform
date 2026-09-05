@@ -1,0 +1,648 @@
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgTable,
+  real,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
+
+export type PromptVariable = {
+  name: string;
+  required: boolean;
+  default?: string;
+};
+
+export const workspace = pgTable("workspace", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const auditLog = pgTable("audit_log", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  actor: text("actor"),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const promptTemplates = pgTable("prompt_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  purpose: text("purpose").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  scopeType: text("scope_type").notNull().default("global"),
+  scopeId: uuid("scope_id"),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const promptVersions = pgTable(
+  "prompt_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    templateId: uuid("template_id")
+      .notNull()
+      .references(() => promptTemplates.id),
+    version: integer("version").notNull(),
+    template: text("template").notNull(),
+    variables: jsonb("variables").$type<PromptVariable[]>().notNull().default([]),
+    outputContract: jsonb("output_contract").$type<Record<string, unknown>>(),
+    isActive: boolean("is_active").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("prompt_versions_template_version_idx").on(table.templateId, table.version)],
+);
+
+export const promptSnapshots = pgTable("prompt_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  templateId: uuid("template_id").notNull(),
+  versionId: uuid("version_id").notNull(),
+  renderedText: text("rendered_text").notNull(),
+  variables: jsonb("variables").$type<Record<string, string>>().notNull().default({}),
+  model: text("model"),
+  params: jsonb("params").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const generations = pgTable("generations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  purpose: text("purpose").notNull(),
+  templateId: uuid("template_id"),
+  versionId: uuid("version_id"),
+  promptSnapshotId: uuid("prompt_snapshot_id"),
+  provider: text("provider").notNull().default("fal"),
+  model: text("model").notNull(),
+  kind: text("kind").notNull().default("image"),
+  status: text("status").notNull().default("queued"),
+  requestId: text("request_id"),
+  params: jsonb("params").$type<Record<string, unknown>>(),
+  error: text("error"),
+  durationMs: integer("duration_ms"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const assets = pgTable("assets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  generationId: uuid("generation_id"),
+  parentId: uuid("parent_id"),
+  name: text("name"),
+  kind: text("kind").notNull().default("image"),
+  source: text("source").notNull().default("generated"),
+  url: text("url"),
+  mime: text("mime"),
+  width: integer("width"),
+  height: integer("height"),
+  durationMs: integer("duration_ms"),
+  sizeBytes: integer("size_bytes"),
+  provider: text("provider"),
+  model: text("model"),
+  status: text("status").notNull().default("draft"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const jobs = pgTable("jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  idempotencyKey: text("idempotency_key").notNull().unique(),
+  kind: text("kind").notNull(),
+  status: text("status").notNull().default("queued"),
+  input: jsonb("input").$type<Record<string, unknown>>(),
+  output: jsonb("output").$type<Record<string, unknown>>(),
+  generationId: uuid("generation_id"),
+  providerRequestId: text("provider_request_id"),
+  model: text("model"),
+  maxAttempts: integer("max_attempts").notNull().default(3),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const jobAttempts = pgTable("job_attempts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  jobId: uuid("job_id")
+    .notNull()
+    .references(() => jobs.id),
+  attemptNumber: integer("attempt_number").notNull(),
+  status: text("status").notNull().default("running"),
+  providerRequestId: text("provider_request_id"),
+  error: text("error"),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  durationMs: integer("duration_ms"),
+});
+
+export const jobEvents = pgTable("job_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  jobId: uuid("job_id")
+    .notNull()
+    .references(() => jobs.id),
+  type: text("type").notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const series = pgTable("series", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const seriesBibles = pgTable(
+  "series_bibles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id),
+    version: integer("version").notNull(),
+    title: text("title"),
+    premise: text("premise"),
+    genre: text("genre"),
+    tone: text("tone"),
+    audience: text("audience"),
+    format: text("format"),
+    language: text("language"),
+    episodeDuration: text("episode_duration"),
+    narrativeRules: jsonb("narrative_rules").$type<string[]>().notNull().default([]),
+    visualStyle: text("visual_style"),
+    canon: jsonb("canon").$type<string[]>().notNull().default([]),
+    prohibitions: jsonb("prohibitions").$type<string[]>().notNull().default([]),
+    description: text("description"),
+    source: text("source").notNull().default("manual"),
+    promptSnapshotId: uuid("prompt_snapshot_id"),
+    isActive: boolean("is_active").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("series_bibles_series_version_idx").on(table.seriesId, table.version)],
+);
+
+export const entities = pgTable("entities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  type: text("type").notNull(),
+  name: text("name").notNull(),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const entityVersions = pgTable(
+  "entity_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entityId: uuid("entity_id")
+      .notNull()
+      .references(() => entities.id),
+    version: integer("version").notNull(),
+    name: text("name").notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+    isActive: boolean("is_active").notNull().default(false),
+    source: text("source").notNull().default("manual"),
+    promptSnapshotId: uuid("prompt_snapshot_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("entity_versions_entity_version_idx").on(table.entityId, table.version)],
+);
+
+export const referenceAssets = pgTable("reference_assets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  entityType: text("entity_type").notNull(),
+  entityId: uuid("entity_id").notNull(),
+  assetId: uuid("asset_id").notNull(),
+  status: text("status").notNull().default("approved"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const referenceSheets = pgTable("reference_sheets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  entityId: uuid("entity_id")
+    .notNull()
+    .references(() => entities.id),
+  entityVersionId: uuid("entity_version_id").notNull(),
+  jobId: uuid("job_id"),
+  status: text("status").notNull().default("draft"),
+  panels: text("panels"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const storyStates = pgTable("story_states", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  version: integer("version").notNull(),
+  kind: text("kind").notNull().default("before"),
+  episode: integer("episode"),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+  isCurrent: boolean("is_current").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const episodePlans = pgTable(
+  "episode_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id),
+    episodeNumber: integer("episode_number").notNull(),
+    version: integer("version").notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+    status: text("status").notNull().default("draft"),
+    source: text("source").notNull().default("manual"),
+    promptSnapshotId: uuid("prompt_snapshot_id"),
+    isActive: boolean("is_active").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("episode_plans_series_episode_version_idx").on(
+      table.seriesId,
+      table.episodeNumber,
+      table.version,
+    ),
+  ],
+);
+
+export const scenes = pgTable("scenes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  planId: uuid("plan_id")
+    .notNull()
+    .references(() => episodePlans.id),
+  episodeNumber: integer("episode_number").notNull(),
+  order: integer("order").notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+  status: text("status").notNull().default("draft"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const shots = pgTable("shots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sceneId: uuid("scene_id")
+    .notNull()
+    .references(() => scenes.id),
+  order: integer("order").notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+  status: text("status").notNull().default("draft"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const generationSteps = pgTable(
+  "generation_steps",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shotId: uuid("shot_id")
+      .notNull()
+      .references(() => shots.id),
+    kind: text("kind").notNull(),
+    status: text("status").notNull().default("pending"),
+    jobId: uuid("job_id"),
+    promptSnapshotId: uuid("prompt_snapshot_id"),
+    input: jsonb("input").$type<Record<string, unknown>>(),
+    output: jsonb("output").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("generation_steps_shot_kind_idx").on(table.shotId, table.kind)],
+);
+
+export const directorSessions = pgTable("director_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  shotId: uuid("shot_id")
+    .notNull()
+    .references(() => shots.id),
+  status: text("status").notNull().default("idle"),
+  initialPrompt: text("initial_prompt"),
+  aspectRatio: text("aspect_ratio"),
+  resolution: text("resolution"),
+  memory: text("memory"),
+  promptVersion: integer("prompt_version").notNull().default(0),
+  currentPrompt: text("current_prompt"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const comfyWorkflows = pgTable("comfy_workflows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  version: text("version").notNull().default("1"),
+  params: jsonb("params").$type<Record<string, unknown>>().notNull().default({}),
+  status: text("status").notNull().default("registered"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const qaFindings = pgTable("qa_findings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  planId: uuid("plan_id")
+    .notNull()
+    .references(() => episodePlans.id),
+  shotId: uuid("shot_id"),
+  check: text("check").notNull(),
+  severity: text("severity").notNull(),
+  evidence: text("evidence"),
+  target: text("target"),
+  repair: text("repair"),
+  status: text("status").notNull().default("open"),
+  resolution: text("resolution"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const audioTracks = pgTable("audio_tracks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  shotId: uuid("shot_id"),
+  kind: text("kind").notNull().default("voice"),
+  status: text("status").notNull().default("pending"),
+  text: text("text"),
+  voice: text("voice"),
+  assetId: uuid("asset_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const episodeExports = pgTable("episode_exports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  planId: uuid("plan_id")
+    .notNull()
+    .references(() => episodePlans.id),
+  status: text("status").notNull().default("pending"),
+  assetId: uuid("asset_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const interactionWindows = pgTable("interaction_windows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  episodeNumber: integer("episode_number").notNull(),
+  status: text("status").notNull().default("open"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const audienceSignals = pgTable(
+  "audience_signals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id),
+    episodeNumber: integer("episode_number").notNull(),
+    windowId: uuid("window_id"),
+    platform: text("platform").notNull(),
+    sourceId: text("source_id").notNull(),
+    raw: jsonb("raw").$type<Record<string, unknown>>().notNull().default({}),
+    comment: text("comment"),
+    liked: boolean("liked").notNull().default(false),
+    reaction: text("reaction"),
+    replyTo: text("reply_to"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    isSpam: boolean("is_spam").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("audience_signals_platform_source_idx").on(table.platform, table.sourceId)],
+);
+
+export const audienceDecisions = pgTable("audience_decisions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  episodeNumber: integer("episode_number").notNull(),
+  windowId: uuid("window_id"),
+  status: text("status").notNull().default("proposed"),
+  title: text("title"),
+  summary: text("summary"),
+  rationale: text("rationale"),
+  confidence: real("confidence").notNull().default(0),
+  rules: jsonb("rules").$type<Record<string, unknown>>().notNull().default({}),
+  snapshot: jsonb("snapshot").$type<Record<string, unknown>>().notNull().default({}),
+  classifySnapshotId: uuid("classify_snapshot_id"),
+  decideSnapshotId: uuid("decide_snapshot_id"),
+  winningCandidateId: uuid("winning_candidate_id"),
+  approvedBy: text("approved_by"),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const decisionCandidates = pgTable("decision_candidates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  decisionId: uuid("decision_id")
+    .notNull()
+    .references(() => audienceDecisions.id),
+  label: text("label").notNull(),
+  summary: text("summary"),
+  intent: text("intent").notNull().default("suggestion"),
+  signalIds: jsonb("signal_ids").$type<string[]>().notNull().default([]),
+  signalCount: integer("signal_count").notNull().default(0),
+  score: real("score").notNull().default(0),
+  isWinner: boolean("is_winner").notNull().default(false),
+  rationale: text("rationale"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const branches = pgTable("branches", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  name: text("name").notNull(),
+  parentBranchId: uuid("parent_branch_id"),
+  baseEpisode: integer("base_episode").notNull(),
+  isCanonical: boolean("is_canonical").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const episodeLoops = pgTable("episode_loops", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  decisionId: uuid("decision_id").notNull(),
+  branchId: uuid("branch_id"),
+  fromEpisode: integer("from_episode").notNull(),
+  toEpisode: integer("to_episode").notNull(),
+  storyStateVersionBefore: integer("story_state_version_before"),
+  storyStateVersionAfter: integer("story_state_version_after"),
+  planId: uuid("plan_id"),
+  status: text("status").notNull().default("draft"),
+  transition: jsonb("transition").$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const tiktokAccounts = pgTable("tiktok_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  platformUsername: text("platform_username"),
+  providerAccountId: text("provider_account_id"),
+  status: text("status").notNull().default("manual"),
+  capabilities: jsonb("capabilities").$type<string[]>().notNull().default([]),
+  linkedAt: timestamp("linked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const tiktokVideos = pgTable("tiktok_videos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  episodeNumber: integer("episode_number").notNull(),
+  providerVideoId: text("provider_video_id"),
+  url: text("url"),
+  status: text("status").notNull().default("associated"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const engagementImports = pgTable("engagement_imports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seriesId: uuid("series_id")
+    .notNull()
+    .references(() => series.id),
+  episodeNumber: integer("episode_number").notNull(),
+  source: text("source").notNull().default("manual"),
+  status: text("status").notNull().default("imported"),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+  signalCount: integer("signal_count").notNull().default(0),
+  correlationId: text("correlation_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const costRecords = pgTable("cost_records", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  jobId: uuid("job_id"),
+  generationId: uuid("generation_id"),
+  seriesId: uuid("series_id"),
+  episodeNumber: integer("episode_number"),
+  sceneId: uuid("scene_id"),
+  shotId: uuid("shot_id"),
+  provider: text("provider").notNull(),
+  model: text("model"),
+  kind: text("kind").notNull(),
+  status: text("status").notNull().default("success"),
+  phase: text("phase").notNull().default("actual"),
+  estimatedCost: real("estimated_cost"),
+  actualCost: real("actual_cost"),
+  durationMs: integer("duration_ms"),
+  correlationId: text("correlation_id"),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  name: text("name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const sessions = pgTable("sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  token: text("token").notNull().unique(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const workspaceMembers = pgTable(
+  "workspace_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspace.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    role: text("role").notNull().default("viewer"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("workspace_members_workspace_user_idx").on(table.workspaceId, table.userId)],
+);
+
+export const invitations = pgTable("invitations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  email: text("email").notNull(),
+  role: text("role").notNull().default("viewer"),
+  token: text("token").notNull().unique(),
+  status: text("status").notNull().default("pending"),
+  invitedBy: uuid("invited_by"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const workspaceQuotas = pgTable("workspace_quotas", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .unique()
+    .references(() => workspace.id),
+  monthlyLimit: integer("monthly_limit").notNull().default(1000),
+  creditsUsed: integer("credits_used").notNull().default(0),
+  resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const workspaceSettings = pgTable("workspace_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .unique()
+    .references(() => workspace.id),
+  settings: jsonb("settings").$type<Record<string, unknown>>().notNull().default({}),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
