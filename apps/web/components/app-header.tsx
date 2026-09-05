@@ -22,12 +22,12 @@ export function AppHeader({
   const route = getStudioRoute(pathname);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center border-b bg-background/92 px-3 backdrop-blur-md sm:px-5">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center border-b bg-background/95 px-3 supports-[backdrop-filter]:backdrop-blur-sm sm:px-5">
       <Button
         ref={menuButtonRef}
         variant="ghost"
         size="icon"
-        className="lg:hidden"
+        className="rounded-full lg:hidden"
         onClick={onMenuClick}
         aria-label="Open navigation"
       >
@@ -36,15 +36,15 @@ export function AppHeader({
       <Button
         variant="ghost"
         size="icon"
-        className="hidden lg:inline-flex"
+        className="hidden rounded-full lg:inline-flex"
         onClick={onToggleSidebar}
         aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
       >
         {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
       </Button>
-      <Separator orientation="vertical" className="mx-2 h-5 sm:mx-3" />
+      <Separator orientation="vertical" className="mx-2 h-4 sm:mx-3" />
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{route.label}</p>
+        <p className="truncate text-sm font-semibold tracking-tight">{route.label}</p>
         <p className="hidden truncate text-xs text-muted-foreground sm:block">
           {route.description}
         </p>

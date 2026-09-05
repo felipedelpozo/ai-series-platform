@@ -1,10 +1,6 @@
 import { notFound } from "next/navigation";
 import {
   Badge,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Table,
   TableBody,
   TableCell,
@@ -35,32 +31,24 @@ export default async function DiagnosticsPage() {
           actions={<Badge variant="outline">{config.appEnv}</Badge>}
         />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Environment
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-mono text-lg font-semibold">{config.appEnv}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Database</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <dl className="grid border-y sm:grid-cols-2 sm:divide-x">
+          <div className="flex min-w-0 items-center justify-between gap-4 py-4 sm:pr-5">
+            <dt className="text-sm text-muted-foreground">Environment</dt>
+            <dd className="break-all font-mono text-sm font-medium">{config.appEnv}</dd>
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-4 border-t py-4 sm:border-t-0 sm:pl-5">
+            <dt className="text-sm text-muted-foreground">Database</dt>
+            <dd>
               <StatusBadge status={database.ok ? "up" : "down"} />
-            </CardContent>
-          </Card>
-        </div>
+            </dd>
+          </div>
+        </dl>
 
         <SectionPanel
           title="Subsystems"
           description="Configuration health exposed by the current runtime."
         >
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="overflow-x-auto border-y">
             <Table>
               <TableHeader>
                 <TableRow>

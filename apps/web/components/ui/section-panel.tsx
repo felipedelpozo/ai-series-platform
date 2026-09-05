@@ -15,8 +15,8 @@ export function SectionPanel({
   className?: string;
 }) {
   return (
-    <Card className={cn("overflow-hidden shadow-sm", className)}>
-      <CardHeader className="flex-row items-start justify-between gap-4 border-b">
+    <Card className={cn("overflow-hidden", className)}>
+      <CardHeader className="flex-row items-start justify-between gap-4 border-b bg-muted/20">
         <div className="min-w-0">
           <CardTitle asChild>
             <h2>{title}</h2>

@@ -490,11 +490,11 @@ export default function SeriesPage() {
                         }}
                         aria-pressed={isSelected}
                         aria-controls="series-detail"
-                        className="flex min-h-20 w-full min-w-0 items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-left outline-none transition-[border-color,box-shadow] hover:border-foreground/25 hover:shadow-sm focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 aria-pressed:border-foreground aria-pressed:ring-1 aria-pressed:ring-foreground"
+                        className="flex min-h-20 w-full min-w-0 items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-left outline-none transition-colors hover:border-foreground/25 hover:bg-muted/20 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 aria-pressed:border-foreground aria-pressed:bg-muted/30 aria-pressed:ring-1 aria-pressed:ring-foreground"
                       >
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-medium">{series.name}</span>
-                          <span className="mt-1 block truncate font-mono text-xs text-muted-foreground">
+                          <span className="mt-1 block truncate text-xs text-muted-foreground">
                             {series.slug}
                           </span>
                         </span>
@@ -669,7 +669,7 @@ export default function SeriesPage() {
                                 <div className="flex min-w-0 flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                                   <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                      <span className="font-mono text-xs font-semibold">
+                                      <span className="text-xs font-medium tabular-nums">
                                         Revision {bible.version}
                                       </span>
                                       {bible.isActive ? (
@@ -679,7 +679,7 @@ export default function SeriesPage() {
                                     <p className="mt-1 break-words text-sm font-medium">
                                       {bible.title ?? "Untitled bible"}
                                     </p>
-                                    <p className="mt-1 font-mono text-[0.6875rem] text-muted-foreground">
+                                    <p className="mt-1 text-xs text-muted-foreground">
                                       Source: {bible.source}
                                     </p>
                                   </div>

@@ -15,6 +15,7 @@ import {
 import {
   cn,
   Separator,
+  SharedLayoutBackground,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -48,32 +49,39 @@ export function AppSidebar({
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground">
+    <div className="flex h-full min-h-0 flex-col rounded-[inherit] bg-background text-foreground">
       <div
         className={cn(
           "flex h-16 shrink-0 items-center gap-3 px-4",
           collapsed && !mobile && "justify-center px-2",
         )}
       >
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
           <Sparkles className="size-4" aria-hidden="true" />
         </span>
         {collapsed && !mobile ? null : (
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold tracking-tight">AI Series</p>
-            <p className="truncate text-xs text-sidebar-foreground/65">Production desk</p>
+            <p className="truncate text-xs text-muted-foreground">Production desk</p>
           </div>
         )}
       </div>
-      <Separator className="bg-sidebar-border" />
+      <Separator />
       <TooltipProvider delayDuration={150}>
-        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-4" aria-label="Main navigation">
+        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3" aria-label="Main navigation">
           {(["Create", "Manage"] as const).map((group) => (
-            <div key={group} className="mb-5 last:mb-0">
+            <div key={group} className="mb-4 last:mb-0">
               {collapsed && !mobile ? null : (
-                <p className="mb-2 px-2 text-xs font-medium text-sidebar-foreground/60">{group}</p>
+                <p className="mb-1.5 px-2 text-[0.6875rem] font-medium text-muted-foreground">
+                  {group}
+                </p>
               )}
-              <ul className="space-y-1">
+              <SharedLayoutBackground
+                as="ul"
+                inset={0}
+                className="gap-1"
+                pillClassName="rounded-lg bg-accent/70"
+              >
                 {studioNavigation
                   .filter((item) => item.group === group)
                   .map((item) => {
@@ -85,10 +93,10 @@ export function AppSidebar({
                         onClick={onNavigate}
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "group flex min-h-10 items-center gap-3 rounded-md px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-sidebar-primary",
+                          "group flex min-h-10 w-full items-center gap-3 rounded-lg px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                           active
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                            : "text-sidebar-foreground/68 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+                            ? "bg-accent font-medium text-accent-foreground"
+                            : "text-muted-foreground hover:text-foreground focus-visible:text-foreground",
                           collapsed && !mobile && "justify-center px-2",
                         )}
                       >
@@ -113,32 +121,25 @@ export function AppSidebar({
                       </li>
                     );
                   })}
-              </ul>
+              </SharedLayoutBackground>
             </div>
           ))}
         </nav>
       </TooltipProvider>
-      <div
-        className={cn(
-          "shrink-0 border-t border-sidebar-border p-3",
-          collapsed && !mobile && "px-2",
-        )}
-      >
+      <div className={cn("shrink-0 border-t p-3", collapsed && !mobile && "px-2")}>
         <div
           className={cn(
-            "flex items-center gap-3 rounded-md px-2 py-2",
+            "flex items-center gap-3 rounded-lg px-2 py-2",
             collapsed && !mobile && "justify-center px-0",
           )}
         >
-          <span className="grid size-8 shrink-0 place-items-center rounded-full border border-sidebar-border bg-sidebar-accent font-mono text-[0.625rem] font-semibold">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full border bg-muted font-mono text-[0.625rem] font-semibold">
             AI
           </span>
           {collapsed && !mobile ? null : (
             <div className="min-w-0">
               <p className="truncate text-xs font-medium">Local workspace</p>
-              <p className="truncate text-[0.6875rem] text-sidebar-foreground/70">
-                Creator environment
-              </p>
+              <p className="truncate text-[0.6875rem] text-muted-foreground">Creator environment</p>
             </div>
           )}
         </div>

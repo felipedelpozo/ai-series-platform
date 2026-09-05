@@ -299,7 +299,7 @@ export function SeriesPlans({
       description="Develop each episode from plan approval through scenes, keyframes and video."
     >
       <div className="space-y-5" aria-busy={busyAction !== null}>
-        <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+        <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
           <div className="w-full space-y-2 sm:max-w-40">
             <Label htmlFor="plan-episode-number">Episode number</Label>
             <Input
@@ -365,7 +365,7 @@ export function SeriesPlans({
               const planScenes = scenes[plan.id];
               const planProgress = progress[plan.id];
               return (
-                <li key={plan.id} className="min-w-0 rounded-xl border bg-card p-4 shadow-xs">
+                <li key={plan.id} className="min-w-0 rounded-lg border bg-card p-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -434,7 +434,7 @@ export function SeriesPlans({
 
                   {planScenes ? (
                     <div className="mt-4 border-t pt-4">
-                      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <p className="mb-3 text-xs font-medium text-muted-foreground">
                         Scene sequence
                       </p>
                       {planScenes.length === 0 ? (
@@ -464,13 +464,13 @@ export function SeriesPlans({
                     <div className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-3">
                       <div>
                         <p className="text-xs text-muted-foreground">Keyframes</p>
-                        <p className="mt-1 font-mono text-sm">
+                        <p className="mt-1 text-sm tabular-nums">
                           {planProgress.shotsWithKeyframe}/{planProgress.totalShots}
                         </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Videos</p>
-                        <p className="mt-1 font-mono text-sm">
+                        <p className="mt-1 text-sm tabular-nums">
                           {planProgress.shotsWithVideo}/{planProgress.totalShots}
                         </p>
                       </div>
