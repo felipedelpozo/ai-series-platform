@@ -29,6 +29,13 @@ export type BibleInput = z.infer<typeof BibleSchema>;
 
 export type CreateSeriesInput = { name: string; slug?: string };
 
+export function buildBiblePrompt(basePrompt: string, details?: string): string {
+  const normalizedDetails = details?.trim();
+  if (!normalizedDetails) return basePrompt;
+
+  return `${basePrompt}\n\nCreator-provided series details:\n<series_details>\n${normalizedDetails}\n</series_details>\nIncorporate these details into the series bible while preserving the required output contract.`;
+}
+
 function slugify(name: string): string {
   return name
     .toLowerCase()
@@ -154,7 +161,11 @@ export async function activateBibleRevision(db: Db, bibleId: string): Promise<vo
   });
 }
 
-export async function generateBibleProposal(db: Db, seriesId: string): Promise<string> {
+export async function generateBibleProposal(
+  db: Db,
+  seriesId: string,
+  input: { details?: string } = {},
+): Promise<string> {
   const [found] = await db.select().from(series).where(eq(series.id, seriesId));
   if (!found) {
     throw new Error("Series not found");
@@ -163,20 +174,30 @@ export async function generateBibleProposal(db: Db, seriesId: string): Promise<s
   if (!active) {
     throw new Error("No active series.bible prompt");
   }
-  const variables = { series_name: found.name };
+  const details = input.details?.trim();
+  const hasDetailsPlaceholder = active.template.includes("{{series_details}}");
+  const variables = {
+    series_name: found.name,
+    ...(details
+      ? { series_details: details }
+      : hasDetailsPlaceholder
+        ? { series_details: "No additional series details provided." }
+        : {}),
+  };
   const { rendered, missing } = renderTemplate(active.template, variables, active.variables);
   if (missing.length > 0) {
     throw new Error(`Missing prompt variables: ${missing.join(", ")}`);
   }
 
-  const object = await generateStructured({ prompt: rendered, schema: BibleSchema });
+  const finalPrompt = hasDetailsPlaceholder ? rendered : buildBiblePrompt(rendered, details);
+  const object = await generateStructured({ prompt: finalPrompt, schema: BibleSchema });
 
   const [snapshot] = await db
     .insert(promptSnapshots)
     .values({
       templateId: active.templateId,
       versionId: active.versionId,
-      renderedText: rendered,
+      renderedText: finalPrompt,
       variables,
       model: "gpt-4o-mini",
       params: {},

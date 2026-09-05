@@ -4,6 +4,10 @@ export {
   editEpisodePlan,
   approveEpisodePlan,
   listEpisodePlans,
+  buildEpisodePlanPrompt,
+  buildEntitiesContext,
+  appendEntitiesContext,
+  sanitizePlanEntityIds,
 } from "./planner";
 export type { EpisodePlan } from "./planner";
 export {
