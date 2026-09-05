@@ -57,6 +57,6 @@ Both were corrected. Focused browser evidence now verifies a static reduced-moti
 
 ## Delivery and residual risk
 
-The branch preserves the exact four-commit Feature 027 stack ending at `79bd1d6`. At convergence time, upstream PR #31 remains the expected dependency; the delivery step will re-fetch and re-evaluate its state immediately before opening the Feature 028 pull request.
+The branch preserves the exact four-commit Feature 027 stack ending at `79bd1d6`. Immediately before delivery, upstream PR [#31](https://github.com/felipedelpozo/ai-series-platform/pull/31) remained open against `develop`, so Feature 028 was pushed and opened as stacked PR [#32](https://github.com/felipedelpozo/ai-series-platform/pull/32) against `codex/027-launcher-prompts-follow-up`.
 
 No merge or deployment is part of this delivery. Remaining risks are inherited repository formatting debt and the five pre-existing build warnings described above.

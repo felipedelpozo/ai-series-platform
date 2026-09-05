@@ -64,7 +64,7 @@
 - [x] T026 Remediate every BLOCKER/HIGH independent-review finding in the affected Feature 028 files and rerun focused evidence
 - [x] T027 Obtain independent re-review after remediation and require zero open BLOCKER/HIGH findings
 - [x] T028 Run Spec Kit convergence and update `specs/028-beui-visual-refresh/completion-report.md` with source provenance, files, gates, browser evidence and stacked-base status
-- [ ] T029 Commit and push `feature/028-beui-visual-refresh`, re-check upstream PR/ancestry, and open a PR against `codex/027-launcher-prompts-follow-up` or retarget to `develop` if the base has landed
+- [x] T029 Commit and push `feature/028-beui-visual-refresh`, re-check upstream PR/ancestry, and open a PR against `codex/027-launcher-prompts-follow-up` or retarget to `develop` if the base has landed
 
 ## Dependencies
 
