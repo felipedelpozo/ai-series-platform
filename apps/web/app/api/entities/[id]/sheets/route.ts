@@ -12,7 +12,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const body = await request.json();
   try {
-    const result = await generateReferenceSheet(getDb(), { entityId: id, panels: body.panels });
+    const result = await generateReferenceSheet(getDb(), {
+      entityId: id,
+      panels: body.panels,
+      idempotencyKey: body.idempotencyKey,
+    });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     return NextResponse.json(

@@ -1,0 +1,176 @@
+export type StudioActionContract = {
+  id: string;
+  method: "DELETE" | "PATCH" | "POST";
+  path: string;
+  fields: readonly string[];
+};
+
+// UI refreshes must not drift these existing request contracts. Dynamic identifiers use :id.
+export const studioActionContracts = [
+  { id: "series.create", method: "POST", path: "/api/series", fields: ["name"] },
+  {
+    id: "series.generateBible",
+    method: "POST",
+    path: "/api/series/:id/generate-bible",
+    fields: [],
+  },
+  {
+    id: "series.saveBible",
+    method: "POST",
+    path: "/api/series/:id/bible",
+    fields: ["<parsed bible body>"],
+  },
+  {
+    id: "series.activateBible",
+    method: "POST",
+    path: "/api/series/bibles/:id/activate",
+    fields: [],
+  },
+  {
+    id: "entities.create",
+    method: "POST",
+    path: "/api/entities",
+    fields: ["seriesId", "type", "name", "data"],
+  },
+  { id: "entities.generate", method: "POST", path: "/api/entities/:id/generate", fields: [] },
+  {
+    id: "entities.activateVersion",
+    method: "POST",
+    path: "/api/entities/versions/:id/activate",
+    fields: [],
+  },
+  {
+    id: "entities.addSheet",
+    method: "POST",
+    path: "/api/entities/:id/sheets",
+    fields: ["idempotencyKey"],
+  },
+  {
+    id: "entities.sheetStatus",
+    method: "PATCH",
+    path: "/api/sheets/:id/status",
+    fields: ["status"],
+  },
+  { id: "entities.promoteSheet", method: "POST", path: "/api/sheets/:id/promote", fields: [] },
+  {
+    id: "story.append",
+    method: "POST",
+    path: "/api/series/:id/story-state",
+    fields: ["kind", "data"],
+  },
+  { id: "plans.create", method: "POST", path: "/api/series/:id/plans", fields: ["episodeNumber"] },
+  { id: "plans.approve", method: "POST", path: "/api/plans/:id/approve", fields: [] },
+  { id: "plans.generateScenes", method: "POST", path: "/api/plans/:id/scenes", fields: [] },
+  {
+    id: "plans.generateShots",
+    method: "POST",
+    path: "/api/plans/:id/generate-shots",
+    fields: ["kind"],
+  },
+  {
+    id: "decisions.create",
+    method: "POST",
+    path: "/api/series/:id/decisions",
+    fields: ["episodeNumber"],
+  },
+  {
+    id: "decisions.approve",
+    method: "POST",
+    path: "/api/decisions/:id/approve",
+    fields: ["candidateId?"],
+  },
+  {
+    id: "decisions.reject",
+    method: "POST",
+    path: "/api/decisions/:id/reject",
+    fields: [],
+  },
+  {
+    id: "loops.create",
+    method: "POST",
+    path: "/api/series/:id/loops",
+    fields: ["decisionId", "branchId?"],
+  },
+  {
+    id: "loops.branch",
+    method: "POST",
+    path: "/api/series/:id/branches",
+    fields: ["name", "baseEpisode"],
+  },
+  { id: "loops.plan", method: "POST", path: "/api/loops/:id/plan", fields: [] },
+  { id: "loops.scenes", method: "POST", path: "/api/loops/:id/scenes", fields: [] },
+  { id: "loops.generate", method: "POST", path: "/api/loops/:id/generate", fields: [] },
+  {
+    id: "tiktok.videos",
+    method: "POST",
+    path: "/api/series/:id/tiktok/videos",
+    fields: ["episodeNumber", "url"],
+  },
+  {
+    id: "tiktok.engagement",
+    method: "POST",
+    path: "/api/series/:id/tiktok/engagement",
+    fields: ["episodeNumber", "source", "correlationId", "events"],
+  },
+  {
+    id: "tiktok.publish",
+    method: "POST",
+    path: "/api/series/:id/tiktok/publish",
+    fields: ["episodeNumber"],
+  },
+  { id: "assets.status", method: "PATCH", path: "/api/assets/:id", fields: ["status"] },
+  { id: "assets.delete", method: "DELETE", path: "/api/assets/:id", fields: [] },
+  {
+    id: "prompts.create",
+    method: "POST",
+    path: "/api/prompts",
+    fields: ["purpose", "name", "template"],
+  },
+  {
+    id: "prompts.save",
+    method: "PATCH",
+    path: "/api/prompts/:id",
+    fields: ["name", "description", "template", "variables"],
+  },
+  {
+    id: "prompts.preview",
+    method: "POST",
+    path: "/api/prompts/preview",
+    fields: ["template", "variables", "declared"],
+  },
+  {
+    id: "prompts.activate",
+    method: "POST",
+    path: "/api/prompts/:id/versions/:versionId/activate",
+    fields: [],
+  },
+  { id: "prompts.archive", method: "POST", path: "/api/prompts/:id/archive", fields: [] },
+  { id: "prompts.clone", method: "POST", path: "/api/prompts/:id/clone", fields: [] },
+  {
+    id: "generations.create",
+    method: "POST",
+    path: "/api/generations",
+    fields: ["type", "templateId", "variables", "params", "sourceAssetId?", "idempotencyKey"],
+  },
+  { id: "ops.reprocess", method: "POST", path: "/api/ops/jobs/:id/reprocess", fields: [] },
+  { id: "ops.cleanup", method: "POST", path: "/api/ops/jobs/:id/cleanup", fields: [] },
+  { id: "accounts.login", method: "POST", path: "/api/auth/login", fields: ["email", "password"] },
+  {
+    id: "accounts.register",
+    method: "POST",
+    path: "/api/auth/register",
+    fields: ["email", "password", "name"],
+  },
+  { id: "accounts.workspace", method: "POST", path: "/api/workspaces", fields: ["name", "slug"] },
+  { id: "studio.saveShot", method: "PATCH", path: "/api/shots/:id", fields: ["data"] },
+  { id: "studio.regenerate", method: "POST", path: "/api/shots/:id/generate", fields: ["kind"] },
+  { id: "studio.voice", method: "POST", path: "/api/shots/:id/voice", fields: ["text"] },
+  { id: "studio.qa", method: "POST", path: "/api/plans/:id/qa", fields: ["includeAi"] },
+  {
+    id: "studio.resolveQa",
+    method: "POST",
+    path: "/api/findings/:id/resolve",
+    fields: ["status"],
+  },
+  { id: "studio.export", method: "POST", path: "/api/plans/:id/export", fields: [] },
+] as const satisfies readonly StudioActionContract[];

@@ -1,14 +1,15 @@
-import { AppHeader } from "@/components/app-header";
-import { AppSidebar } from "@/components/app-sidebar";
+import { StudioShell } from "@/components/studio-shell";
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen">
-      <AppSidebar />
-      <div className="flex flex-1 flex-col">
-        <AppHeader />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
-      </div>
-    </div>
+    <>
+      <a
+        href="#main-content"
+        className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-transform focus:translate-y-0"
+      >
+        Skip to content
+      </a>
+      <StudioShell>{children}</StudioShell>
+    </>
   );
 }

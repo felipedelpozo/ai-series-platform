@@ -3,11 +3,7 @@ import { getDb } from "@ai-series/db";
 import { getPromptDetail } from "@ai-series/prompts";
 import { PromptEditor } from "@/components/prompt-editor";
 
-export default async function PromptDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function PromptDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const detail = await getPromptDetail(getDb(), id);
   if (!detail) {

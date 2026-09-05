@@ -1,9 +1,13 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
 import { jobAttempts, jobEvents, jobs, type Db } from "@ai-series/db";
 
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 
-export function shouldRetry(retryable: boolean, attemptCount: number, maxAttempts: number): boolean {
+export function shouldRetry(
+  retryable: boolean,
+  attemptCount: number,
+  maxAttempts: number,
+): boolean {
   return Boolean(retryable) && attemptCount < maxAttempts;
 }
 
@@ -21,13 +25,6 @@ export async function enqueueJob(
   db: Db,
   input: EnqueueInput,
 ): Promise<{ id: string; created: boolean }> {
-  const [existing] = await db
-    .select({ id: jobs.id })
-    .from(jobs)
-    .where(eq(jobs.idempotencyKey, input.idempotencyKey));
-  if (existing) {
-    return { id: existing.id, created: false };
-  }
   const [job] = await db
     .insert(jobs)
     .values({
@@ -40,8 +37,41 @@ export async function enqueueJob(
       maxAttempts: input.maxAttempts ?? 3,
       status: "queued",
     })
+    .onConflictDoNothing({ target: jobs.idempotencyKey })
     .returning({ id: jobs.id });
-  return { id: job.id, created: true };
+  if (job) return { id: job.id, created: true };
+
+  const [existing] = await db
+    .select({ id: jobs.id })
+    .from(jobs)
+    .where(eq(jobs.idempotencyKey, input.idempotencyKey));
+  if (!existing) throw new Error("Idempotent job could not be resolved");
+  return { id: existing.id, created: false };
+}
+
+export async function enqueueActiveJob(
+  db: Db,
+  input: EnqueueInput,
+  scope: string,
+): Promise<{ id: string; created: boolean }> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${scope}))`);
+    const [active] = await tx
+      .select({ id: jobs.id })
+      .from(jobs)
+      .where(
+        and(
+          eq(jobs.workspaceId, input.workspaceId),
+          eq(jobs.kind, input.kind),
+          inArray(jobs.status, ["queued", "running"]),
+          like(jobs.idempotencyKey, `${scope}:%`),
+        ),
+      )
+      .orderBy(desc(jobs.createdAt))
+      .limit(1);
+    if (active) return { id: active.id, created: false };
+    return enqueueJob(tx, input);
+  });
 }
 
 export async function claimNextJob(
@@ -139,7 +169,10 @@ export async function cancelJob(db: Db, jobId: string): Promise<void> {
   if (job.status === "succeeded" || job.status === "failed") {
     throw new Error(`Cannot cancel a ${job.status} job`);
   }
-  await db.update(jobs).set({ status: "cancelled", updatedAt: new Date() }).where(eq(jobs.id, jobId));
+  await db
+    .update(jobs)
+    .set({ status: "cancelled", updatedAt: new Date() })
+    .where(eq(jobs.id, jobId));
   await db.insert(jobEvents).values({ jobId, type: "cancelled", payload: {} });
 }
 

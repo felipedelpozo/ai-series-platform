@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { ThemeProvider } from "@ai-series/ui";
 import "./globals.css";
 
+const geist = Geist({ subsets: ["latin"], variable: "--font-interface" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-utility" });
+const newsreader = Newsreader({ subsets: ["latin"], variable: "--font-editorial" });
+
 export const metadata: Metadata = {
-  title: "AI Series Platform",
-  description: "Creator studio for AI-native interactive series",
+  title: { default: "AI Series Studio", template: "%s · AI Series Studio" },
+  description: "Production desk for AI-native interactive series",
 };
 
 const themeScript = `(function(){try{var t=localStorage.getItem('ai-series-theme');var m=window.matchMedia('(prefers-color-scheme: light)').matches;var d=t?t==='dark':!m;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
@@ -15,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>
+      <body className={`${geist.variable} ${geistMono.variable} ${newsreader.variable}`}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

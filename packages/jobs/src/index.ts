@@ -1,5 +1,6 @@
 export {
   enqueueJob,
+  enqueueActiveJob,
   claimNextJob,
   completeJob,
   failJob,

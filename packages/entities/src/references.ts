@@ -1,5 +1,5 @@
-import { randomUUID } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { createHash, randomUUID } from "node:crypto";
+import { and, desc, eq, like, sql } from "drizzle-orm";
 import {
   assets,
   entities,
@@ -27,7 +27,7 @@ async function resolveWorkspaceId(db: Db): Promise<string> {
 
 export async function generateReferenceSheet(
   db: Db,
-  input: { entityId: string; panels?: string },
+  input: { entityId: string; panels?: string; idempotencyKey?: string },
 ): Promise<{ sheetId: string; jobId: string }> {
   const [entity] = await db.select().from(entities).where(eq(entities.id, input.entityId));
   if (!entity) {
@@ -60,25 +60,67 @@ export async function generateReferenceSheet(
   }
 
   const workspaceId = await resolveWorkspaceId(db);
-  const { id: jobId } = await enqueueJob(db, {
-    workspaceId,
-    idempotencyKey: randomUUID(),
-    kind: "image",
-    input: { templateId: active.templateId, variables, params: {} },
+  const fingerprint = createHash("sha256")
+    .update(
+      JSON.stringify({
+        entityId: entity.id,
+        entityVersionId: version.id,
+        promptVersionId: active.versionId,
+        panels: input.panels ?? null,
+      }),
+    )
+    .digest("hex");
+  const scope = `reference-sheet:${fingerprint}`;
+  const attemptToken =
+    typeof input.idempotencyKey === "string" && input.idempotencyKey.length <= 128
+      ? input.idempotencyKey
+      : randomUUID();
+  const idempotencyKey = `${scope}:${attemptToken}`;
+
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${scope}))`);
+    const candidates = await tx
+      .select({
+        sheetId: referenceSheets.id,
+        jobId: jobs.id,
+        jobStatus: jobs.status,
+        idempotencyKey: jobs.idempotencyKey,
+      })
+      .from(referenceSheets)
+      .innerJoin(jobs, eq(referenceSheets.jobId, jobs.id))
+      .where(
+        and(
+          eq(referenceSheets.entityVersionId, version.id),
+          like(jobs.idempotencyKey, `${scope}:%`),
+        ),
+      )
+      .orderBy(desc(referenceSheets.createdAt));
+    const existing = candidates.find(
+      (candidate) =>
+        candidate.idempotencyKey === idempotencyKey ||
+        candidate.jobStatus === "queued" ||
+        candidate.jobStatus === "running",
+    );
+    if (existing) return { sheetId: existing.sheetId, jobId: existing.jobId };
+
+    const { id: jobId } = await enqueueJob(tx, {
+      workspaceId,
+      idempotencyKey,
+      kind: "image",
+      input: { templateId: active.templateId, variables, params: {} },
+    });
+    const [sheet] = await tx
+      .insert(referenceSheets)
+      .values({
+        entityId: entity.id,
+        entityVersionId: version.id,
+        jobId,
+        status: "draft",
+        panels: input.panels ?? null,
+      })
+      .returning({ id: referenceSheets.id });
+    return { sheetId: sheet.id, jobId };
   });
-
-  const [sheet] = await db
-    .insert(referenceSheets)
-    .values({
-      entityId: entity.id,
-      entityVersionId: version.id,
-      jobId,
-      status: "draft",
-      panels: input.panels ?? null,
-    })
-    .returning({ id: referenceSheets.id });
-
-  return { sheetId: sheet.id, jobId };
 }
 
 async function resolveAssetForJob(db: Db, jobId: string | null) {
@@ -123,7 +165,10 @@ export async function promoteReferenceSheet(db: Db, sheetId: string): Promise<st
   if (!asset) {
     throw new Error("No generated asset to promote");
   }
-  await db.update(referenceSheets).set({ status: "approved" }).where(eq(referenceSheets.id, sheetId));
+  await db
+    .update(referenceSheets)
+    .set({ status: "approved" })
+    .where(eq(referenceSheets.id, sheetId));
   const [ref] = await db
     .insert(referenceAssets)
     .values({ entityType: entity.type, entityId: entity.id, assetId: asset.id, status: "approved" })

@@ -1,0 +1,42 @@
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cn } from "../lib/utils";
+
+function Card({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card"
+      className={cn("rounded-xl border bg-card text-card-foreground shadow-xs", className)}
+      {...props}
+    />
+  );
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return <div className={cn("flex flex-col gap-1.5 p-5", className)} {...props} />;
+}
+
+function CardTitle({
+  className,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"h3"> & { asChild?: boolean }) {
+  const Component = asChild ? Slot : "h3";
+  return <Component className={cn("text-base font-semibold leading-none", className)} {...props} />;
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"p">) {
+  return (
+    <p className={cn("text-sm leading-relaxed text-muted-foreground", className)} {...props} />
+  );
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return <div className={cn("p-5 pt-0", className)} {...props} />;
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return <div className={cn("flex items-center p-5 pt-0", className)} {...props} />;
+}
+
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };

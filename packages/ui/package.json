@@ -15,7 +15,12 @@
     "react-dom": "catalog:"
   },
   "dependencies": {
+    "@radix-ui/react-alert-dialog": "catalog:",
+    "@radix-ui/react-dialog": "catalog:",
+    "@radix-ui/react-label": "catalog:",
+    "@radix-ui/react-select": "catalog:",
     "@radix-ui/react-slot": "catalog:",
+    "@radix-ui/react-tabs": "catalog:",
     "@radix-ui/react-tooltip": "catalog:",
     "@radix-ui/react-separator": "catalog:",
     "class-variance-authority": "catalog:",
@@ -24,6 +29,7 @@
     "lucide-react": "catalog:"
   },
   "devDependencies": {
+    "@types/bun": "catalog:",
     "typescript": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
