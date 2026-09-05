@@ -64,3 +64,5 @@ No merge or deployment is part of this delivery. Remaining risks are inherited r
 ## Post-delivery runtime correction
 
 The live verification exposed that the shared `instrumentation.ts` entrypoint imported `dotenv` and `node:path` at module scope. Next.js also compiles that entrypoint for Edge, so development and production builds emitted unsupported Node API warnings. The Node-only startup validation and prompt seeding now live in `instrumentation.node.ts`, loaded only when `NEXT_RUNTIME` is `nodejs`, following the installed Next.js 16 guidance. A source-boundary regression test, lint, typecheck, production build and live `/series` plus `/api/series` checks all pass without the two Edge warnings.
+
+Browser review also identified horizontal scrolling in the Series production-section tabs. That route now uses a full-width responsive grid: seven visible columns on wide screens and wrapped rows at narrower breakpoints. The tab list keeps its Radix keyboard semantics while browser coverage asserts that `scrollWidth` never exceeds `clientWidth` and horizontal overflow is neither `auto` nor `scroll` at 375, 768 and 1440 px.

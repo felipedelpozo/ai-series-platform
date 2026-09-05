@@ -532,6 +532,16 @@ test("Series launcher exposes canonical setup facts in both themes and target wi
     await expect(setup).toContainText("Canon active");
     await expect(setup).toContainText("2 defined");
     await expect(setup).toContainText("1 active");
+    const productionSections = page.getByRole("tablist", {
+      name: "Series production sections",
+    });
+    const tabListLayout = await productionSections.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      overflowX: getComputedStyle(element).overflowX,
+    }));
+    expect(tabListLayout.scrollWidth).toBeLessThanOrEqual(tabListLayout.clientWidth);
+    expect(tabListLayout.overflowX).not.toMatch(/auto|scroll/);
     await assertNoPageOverflow(page);
     await testInfo.attach(`launcher-light-${width}`, {
       body: await page.screenshot({ fullPage: true }),
